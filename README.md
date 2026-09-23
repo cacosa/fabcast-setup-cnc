@@ -29,3 +29,4 @@ Confirme no Supabase:
 
 ## Publicação
 Pode substituir o `index.html` do repositório GitHub `fabcast-setup-cnc` por este ficheiro.
+Deploy V1.1.1
