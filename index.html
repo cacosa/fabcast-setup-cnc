@@ -313,19 +313,77 @@ async function saveSetup(){
 }
 $('saveBtn').onclick=saveSetup;
 
-$('newSetupBtn').onclick=()=>$('newModal').classList.remove('hidden');
-$('closeModal').onclick=$('cancelModal').onclick=()=>$('newModal').classList.add('hidden');
-$('createSetup').onclick=async()=>{
-  const code=$('mCode').value.trim(), designation=$('mDesignation').value.trim(), operation=$('mOperation').value.trim(), machine=$('mMachine').value.trim();
-  if(!designation||!operation||!machine){alert('Preencha Designação, Operação e Máquina.');return;}
-  if(code && !/^\d{8}$/.test(code)){alert('Se existir, o código interno da peça deve ter 8 dígitos.');return;}
-  const payload={codigo_peca:nil(code),designacao,cliente:nil($('mClient').value.trim()),operacao,machine:undefined};
-  const row={codigo_peca:nil(code),designacao,cliente:nil($('mClient').value.trim()),operacao,maquina:machine,programa_cnc:nil($('mProgram').value.trim()),estado:'Ativo'};
-  const {data,error}=await sb.from('setups').insert(row).select().single();
-  if(error){alert(error.message);return;}
+function fecharModalNovoSetup(){
   $('newModal').classList.add('hidden');
+}
+
+function limparModalNovoSetup(){
   ['mCode','mDesignation','mClient','mOperation','mMachine','mProgram'].forEach(id=>$(id).value='');
-  setups.unshift(data); renderList(); openSetup(data.id);
+}
+
+$('newSetupBtn').onclick=()=>{
+  limparModalNovoSetup();
+  $('newModal').classList.remove('hidden');
+  setTimeout(()=>$('mCode').focus(),0);
+};
+
+$('closeModal').onclick=$('cancelModal').onclick=fecharModalNovoSetup;
+
+$('newModal').addEventListener('click',(e)=>{
+  if(e.target===$('newModal')) fecharModalNovoSetup();
+});
+
+$('createSetup').onclick=async()=>{
+  const btn=$('createSetup');
+  const code=$('mCode').value.trim();
+  const designation=$('mDesignation').value.trim();
+  const operation=$('mOperation').value.trim();
+  const machine=$('mMachine').value.trim();
+
+  if(!designation||!operation||!machine){
+    alert('Preencha Designação, Operação e Máquina.');
+    return;
+  }
+
+  if(code && !/^\d{8}$/.test(code)){
+    alert('Se existir, o código interno da peça deve ter 8 dígitos.');
+    return;
+  }
+
+  const row={
+    codigo_peca:nil(code),
+    designacao,
+    cliente:nil($('mClient').value.trim()),
+    operacao,
+    maquina:machine,
+    programa_cnc:nil($('mProgram').value.trim()),
+    estado:'Ativo'
+  };
+
+  try{
+    btn.disabled=true;
+    btn.textContent='A criar...';
+
+    const {data,error}=await sb
+      .from('setups')
+      .insert(row)
+      .select()
+      .single();
+
+    if(error) throw error;
+
+    fecharModalNovoSetup();
+    limparModalNovoSetup();
+
+    await loadSetups();
+    await openSetup(data.id);
+  }catch(err){
+    console.error('Erro ao criar setup:',err);
+    alert('Erro ao criar setup: '+(err?.message||err));
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Criar setup';
+  }
 };
 
 $('deleteBtn').onclick=async()=>{
@@ -431,6 +489,7 @@ async function deletePhoto(ordem){
 
 ['globalSearch','filterOperation'].forEach(id=>$(id).addEventListener('input',renderList));
 ['filterClient','filterMachine','filterStatus'].forEach(id=>$(id).addEventListener('change',renderList));
+document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&!$('newModal').classList.contains('hidden')) fecharModalNovoSetup();});
 document.querySelectorAll('.acc-head').forEach(b=>b.onclick=()=>{const body=$(b.dataset.target);const open=!body.classList.contains('hidden');body.classList.toggle('hidden');b.lastElementChild.textContent=open?'+':'−';});
 
 $('printBtn').onclick=()=>{
