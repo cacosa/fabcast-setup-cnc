@@ -1,18 +1,31 @@
-# FABCAST Setup CNC — V1
+# FABCAST Setup CNC — V1.1 Supabase
 
-Primeira versão funcional, sem importação dos dados antigos.
+Versão ligada ao projeto Supabase real.
 
-Inclui:
-- criação, edição, pesquisa, filtros e eliminação de setups;
-- código interno da peça opcional;
-- ID automático por setup;
-- montagem/notas;
-- máximo de 2 fotografias;
-- tabela expansível de ferramentas;
-- validação do código interno de ferramenta FABCAST: 8 dígitos e começa por 5;
-- tabela expansível de origens;
-- geração de folha CNC A4: página 1 ferramentas, página 2 origens.
+## Configuração embutida
+- Project URL: `https://sxjvcogannhewhoovdar.supabase.co`
+- Publishable key: incluída no `index.html`
+- Bucket privado: `setup-fotos`
 
-Teste local: abra `index.html` num browser moderno. Os dados ficam no `localStorage` do browser.
+A publishable key é própria para frontend. Não usar service_role/secret key no browser.
 
-`supabase_schema.sql` contém a estrutura proposta para a versão Supabase.
+## Funcionalidades
+- login por email/password via Supabase Auth;
+- leitura e escrita de setups;
+- ferramentas por setup;
+- origens por setup;
+- até 2 fotos por setup no Storage privado;
+- limite de 1 MB por foto;
+- signed URLs para visualizar fotos privadas;
+- geração de folha CNC A4 (ferramentas + origens);
+- filtros e pesquisa.
+
+## Antes de publicar
+Confirme no Supabase:
+- RLS ativo;
+- policies `authenticated` criadas nas 4 tabelas;
+- policies `authenticated` no bucket `setup-fotos`;
+- utilizador criado em Authentication > Users.
+
+## Publicação
+Pode substituir o `index.html` do repositório GitHub `fabcast-setup-cnc` por este ficheiro.
