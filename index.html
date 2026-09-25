@@ -148,7 +148,7 @@
         const {data:sessionData,error:sessionError}=await sb.auth.getSession();
         if(sessionError) throw sessionError;
         if(!sessionData?.session) throw new Error("Sessão terminada. Entre novamente.");
-        const payload={codigo_peca:code||null,designacao,cliente:client||null,operacao:operation,maquina:machine,programa_cnc:program||null,estado:"Ativo"};
+        const payload={codigo_peca:code||null,designacao:designation,cliente:client||null,operacao:operation,maquina:machine,programa_cnc:program||null,estado:"Ativo"};
         const {data,error}=await sb.from("setups").insert([payload]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
         if(error) throw error;
         if(!data?.id) throw new Error("O Supabase não devolveu o ID do novo setup.");
