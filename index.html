@@ -1,508 +1,168 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FABCAST · Setup CNC</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{
-  --nav:#101827;--nav2:#182238;--blue:#2457d6;--bg:#f5f7fb;--card:#fff;
-  --line:#dfe5ee;--text:#172033;--muted:#6c7587;--green:#1b8a5a;--red:#be3d3d;
-  --shadow:0 10px 28px rgba(20,33,61,.08)
-}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-button,input,select,textarea{font:inherit}
-.hidden{display:none!important}
-.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#101827,#1b2c4b)}
-.login-card{width:min(440px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.25)}
-.login-brand{font-weight:900;font-size:28px;letter-spacing:.05em;margin-bottom:6px}
-.login-sub{color:var(--muted);margin-bottom:22px}
-.field label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:5px}
-.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff}
-.field textarea{min-height:110px;resize:vertical}
-.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
-.btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--line);color:var(--text)}.btn-danger{background:#fff0f0;color:var(--red);border:1px solid #ffd4d4}
-.login-card .btn{width:100%;margin-top:14px}
-.login-msg{font-size:13px;margin-top:10px;color:var(--red);min-height:18px}
-.app{min-height:100vh;display:grid;grid-template-columns:260px 1fr}
-.sidebar{background:var(--nav);color:#fff;padding:22px 18px;display:flex;flex-direction:column;gap:24px}
-.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.04em}.brandmark{width:34px;height:34px;border:2px solid #fff;border-radius:50%;display:grid;place-items:center}
-.nav a{display:flex;align-items:center;gap:10px;color:#c9d1df;text-decoration:none;padding:11px 12px;border-radius:10px;margin-bottom:5px}.nav a.active{background:#2b416f;color:#fff}
-.side-foot{margin-top:auto;color:#8f9bad;font-size:13px}
-main{min-width:0}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 26px;position:sticky;top:0;z-index:10}
-.search{flex:1;max-width:650px;position:relative}.search input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:#f8fafc}
-.user{margin-left:auto;color:var(--muted);font-size:14px;display:flex;gap:10px;align-items:center}
-.page{padding:24px;display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px}
-.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
-.list-panel{padding:16px;height:calc(100vh - 118px);position:sticky;top:94px;overflow:auto}
-.row-between{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.h2{font-size:18px;font-weight:800}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.filters select,.filters input{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:white}
-.setup-list{display:flex;flex-direction:column;gap:8px}.setup-item{padding:12px;border:1px solid var(--line);border-radius:11px;cursor:pointer;background:#fff}.setup-item.active{border-color:#8caaf8;background:#f4f7ff}
-.setup-code{font-weight:800}.setup-sub{color:var(--muted);font-size:13px;margin-top:4px}.badge{font-size:12px;padding:4px 8px;border-radius:20px;background:#e9f7f0;color:var(--green);font-weight:700}
-.empty{padding:28px 10px;text-align:center;color:var(--muted);font-size:14px}
-.content{min-width:0}.content>.card{padding:20px;margin-bottom:16px}
-.title-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.title-main h1{font-size:28px;margin:0}.subtitle{color:var(--muted);margin-top:5px}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.section-title{font-size:16px;font-weight:800;margin-bottom:12px}
-.photos{display:grid;grid-template-columns:1fr 1fr;gap:12px}.photo-box{min-height:190px;border:1.5px dashed #b8c2d3;border-radius:12px;display:grid;place-items:center;overflow:hidden;background:#fafbfd;position:relative;color:var(--muted)}.photo-box img{width:100%;height:220px;object-fit:cover}.photo-actions{position:absolute;right:8px;top:8px}
-.accordion{margin-top:12px}.acc-head{width:100%;border:0;border-top:1px solid var(--line);background:#fafbfd;padding:14px 4px;display:flex;justify-content:space-between;font-weight:800;cursor:pointer}.acc-body{padding:10px 0 4px}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}th{background:#f4f6f9;color:#526078;font-size:12px}td input{width:100%;min-width:80px;border:1px solid #d8deea;border-radius:7px;padding:7px;background:#fff}
-.small{font-size:12px;color:var(--muted)}.toolbar{display:flex;justify-content:flex-end;margin-top:10px;gap:8px}
-.modal{position:fixed;inset:0;background:rgba(9,18,34,.48);display:grid;place-items:center;z-index:50;padding:20px}.modal-card{width:min(760px,100%);background:#fff;border-radius:15px;padding:20px;box-shadow:0 30px 70px rgba(0,0,0,.25)}.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-.notice{font-size:12px;color:var(--muted);margin-top:6px}.print-only{display:none}
-.statusline{font-size:12px;color:var(--muted);padding:6px 0;min-height:22px}
-@media(max-width:1100px){.app{grid-template-columns:78px 1fr}.sidebar{padding:20px 10px}.brand span,.nav span,.side-foot{display:none}.brand{justify-content:center}.nav a{justify-content:center}.page{grid-template-columns:1fr}.list-panel{position:static;height:auto}.grid{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){.app{display:block}.sidebar{display:none}.page{padding:12px}.grid,.photos,.modal-grid{grid-template-columns:1fr}.title-row{display:block}.actions{margin-top:12px}}
-@media print{
-  body{background:#fff}.app,.modal,.login-wrap{display:none!important}.print-only{display:block!important;color:#000;font-family:Arial,sans-serif}
-  @page{size:A4 portrait;margin:12mm}.print-page{page-break-after:always}.print-page:last-child{page-break-after:auto}
-  .p-head{border-bottom:2px solid #000;padding-bottom:7px;margin-bottom:10px}.p-title{font-size:18px;font-weight:700}.p-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-top:8px}
-  .p-table{width:100%;border-collapse:collapse;font-size:10px}.p-table th,.p-table td{border:1px solid #000;padding:4px}.p-table th{background:#eee;color:#000}.p-section{font-weight:700;margin:12px 0 6px}
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FABCAST · Setup CNC</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--nav:#111827;--blue:#2457d6;--bg:#f4f6f9;--card:#fff;--line:#dce2ea;--text:#172033;--muted:#687386;--green:#16794f;--red:#b42318;--shadow:0 10px 30px rgba(17,24,39,.08)}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+    .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#111827,#20345a)}
+    .login-card{width:min(420px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.25)}
+    .brand{font-size:28px;font-weight:900;letter-spacing:.04em;margin-bottom:4px}.subtitle{color:var(--muted);margin-bottom:22px}
+    .field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px}.field input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;outline:none;background:#fff}.field input:focus{border-color:#8cabff;box-shadow:0 0 0 3px rgba(36,87,214,.10)}
+    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800}.btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--line);color:var(--text)}.login-card .btn{width:100%}
+    .msg{min-height:20px;margin-top:12px;font-size:13px;color:var(--muted)}.msg.error{color:var(--red)}.msg.ok{color:var(--green)}
+    .app-shell{min-height:100vh;display:grid;grid-template-columns:230px 1fr}aside{background:var(--nav);color:#fff;padding:22px 18px;display:flex;flex-direction:column}.side-brand{font-weight:900;font-size:22px;margin-bottom:28px}.nav-item{padding:11px 12px;border-radius:10px;color:#d3dae5;background:#263857;font-weight:700}.version{margin-top:auto;color:#99a5b8;font-size:12px}
+    main{min-width:0}.topbar{min-height:70px;background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;gap:12px;align-items:center}.topbar .title{font-weight:900;font-size:20px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}.user-email{color:var(--muted);font-size:13px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .page{padding:24px;max-width:1200px;margin:0 auto}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.toolbar h1{margin:0;font-size:24px}.search{margin-bottom:16px}.search input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.statusbar{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--muted);font-size:13px;margin-bottom:14px}
+    .setup-list{display:grid;gap:10px}.setup-item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.setup-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.setup-code{font-weight:900;font-size:16px}.badge{font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;background:#eaf7f1;color:var(--green)}.setup-name{font-weight:700;margin-top:6px}.setup-meta{color:var(--muted);font-size:13px;margin-top:5px}.empty{text-align:center;color:var(--muted);padding:40px 10px}
+    .modal{position:fixed;inset:0;background:rgba(15,23,42,.50);display:grid;place-items:center;z-index:100;padding:20px}.modal-card{width:min(720px,100%);background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.25);padding:20px}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.modal-head h2{margin:0}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+    @media(max-width:800px){.app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.topbar{padding:12px 14px}.user-email{display:none}}
+  </style>
 </head>
 <body>
+  <section id="loginView" class="login-screen">
+    <form class="login-card" onsubmit="login(event)">
+      <div class="brand">FABCAST</div>
+      <div class="subtitle">Setup CNC · V1.0 limpa</div>
+      <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+      <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
+      <div id="loginMsg" class="msg"></div>
+    </form>
+  </section>
 
-<div id="loginView" class="login-wrap">
-  <div class="login-card">
-    <div class="login-brand">FABCAST</div>
-    <div class="login-sub">Setup CNC · acesso interno</div>
-    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
-    <div class="field" style="margin-top:12px"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
-    <button class="btn btn-primary" id="loginBtn">Entrar</button>
-    <div id="loginMsg" class="login-msg"></div>
-  </div>
-</div>
-
-<div id="appView" class="app hidden">
-  <aside class="sidebar">
-    <div class="brand"><div class="brandmark">F</div><span>FABCAST</span></div>
-    <nav class="nav">
-      <a href="#" class="active">⚙ <span>Setups CNC</span></a>
-      <a href="#">▣ <span>Peças</span></a>
-      <a href="#">⌘ <span>Programas</span></a>
-      <a href="#">🛠 <span>Ferramentas</span></a>
-      <a href="#">◎ <span>Clientes</span></a>
-      <a href="#">▤ <span>Máquinas</span></a>
-    </nav>
-    <div class="side-foot">V1.1 · Supabase</div>
-  </aside>
-
-  <main>
-    <div class="topbar">
-      <div class="search"><input id="globalSearch" placeholder="Pesquisar por código, designação, cliente ou programa..."></div>
-      <div class="user"><span id="userEmail"></span><button class="btn btn-secondary" id="logoutBtn">Sair</button></div>
-    </div>
-
-    <div class="page">
-      <section class="panel list-panel">
-        <div class="row-between"><div class="h2">Setups CNC</div><button class="btn btn-primary" id="newSetupBtn">+ Novo</button></div>
-        <div class="filters">
-          <select id="filterClient"><option value="">Todos clientes</option></select>
-          <select id="filterMachine"><option value="">Todas máquinas</option></select>
-          <input id="filterOperation" placeholder="Operação">
-          <select id="filterStatus"><option value="">Todos estados</option><option>Ativo</option><option>Em revisão</option><option>Arquivado</option></select>
+  <section id="appView" class="app-shell hidden">
+    <aside>
+      <div class="side-brand">FABCAST</div>
+      <div class="nav-item">⚙ Setup CNC</div>
+      <div class="version">V1.0 CLEAN</div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div class="title">Setup CNC</div>
+        <div class="top-actions"><div id="userEmail" class="user-email"></div><button class="btn btn-secondary" type="button" onclick="logout()">Sair</button></div>
+      </header>
+      <div class="page">
+        <div class="card">
+          <div class="toolbar"><h1>Setups</h1><button class="btn btn-primary" type="button" onclick="openNewSetup()">+ Novo setup</button></div>
+          <div class="search"><input id="searchInput" placeholder="Pesquisar por código, designação, cliente, máquina ou programa..." oninput="renderSetups()"></div>
+          <div id="statusBar" class="statusbar">A iniciar...</div>
+          <div id="setupList" class="setup-list"></div>
         </div>
-        <div id="statusLine" class="statusline"></div>
-        <div id="setupCount" class="small"></div>
-        <div id="setupList" class="setup-list" style="margin-top:10px"></div>
-      </section>
+      </div>
+    </main>
+  </section>
 
-      <section class="content">
-        <div id="welcomeCard" class="card">
-          <div class="empty"><h2 style="margin-bottom:8px">Base Supabase ligada</h2><div>Crie o primeiro setup para começar.</div></div>
-        </div>
+  <section id="newSetupModal" class="modal hidden" onclick="backdropClose(event)">
+    <form class="modal-card" onsubmit="createSetup(event)">
+      <div class="modal-head"><h2>Novo setup</h2><button class="btn btn-secondary" type="button" onclick="closeNewSetup()">Fechar</button></div>
+      <div class="form-grid">
+        <div class="field"><label for="mCode">Código interno peça</label><input id="mCode" maxlength="8" inputmode="numeric" placeholder="Opcional"></div>
+        <div class="field"><label for="mDesignation">Designação *</label><input id="mDesignation" required></div>
+        <div class="field"><label for="mClient">Cliente</label><input id="mClient"></div>
+        <div class="field"><label for="mOperation">Operação *</label><input id="mOperation" placeholder="Ex.: OP10" required></div>
+        <div class="field"><label for="mMachine">Máquina *</label><input id="mMachine" placeholder="Ex.: UMC-750-1" required></div>
+        <div class="field"><label for="mProgram">Programa CNC</label><input id="mProgram"></div>
+      </div>
+      <div id="createMsg" class="msg"></div>
+      <div class="modal-actions"><button class="btn btn-secondary" type="button" onclick="closeNewSetup()">Cancelar</button><button id="createBtn" class="btn btn-primary" type="submit">Criar setup</button></div>
+    </form>
+  </section>
 
-        <div id="editor" class="hidden">
-          <div class="card">
-            <div class="title-row">
-              <div class="title-main">
-                <div class="row-between" style="justify-content:flex-start"><h1 id="titleCode">Sem código</h1><span class="badge" id="statusBadge">Ativo</span></div>
-                <div class="subtitle" id="titleDesignation"></div>
-              </div>
-              <div class="actions">
-                <button class="btn btn-secondary" id="saveBtn">Guardar</button>
-                <button class="btn btn-primary" id="printBtn">Gerar folha CNC</button>
-                <button class="btn btn-danger" id="deleteBtn">Eliminar</button>
-              </div>
-            </div>
-          </div>
+  <script>
+    const SUPABASE_URL = "https://sxjvcogannhewhoovdar.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_wa3NLkXzs6jbUDkWbPaj3Q_Rt1RTMVx";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let setups = [];
+    const el = id => document.getElementById(id);
 
-          <div class="card">
-            <div class="section-title">Dados principais</div>
-            <div class="grid">
-              <div class="field"><label>Código interno peça</label><input id="pieceCode" maxlength="8" inputmode="numeric" placeholder="Opcional"></div>
-              <div class="field"><label>ID</label><input id="setupId" disabled></div>
-              <div class="field"><label>Estado</label><select id="status"><option>Ativo</option><option>Em revisão</option><option>Arquivado</option></select></div>
-              <div class="field"><label>Designação</label><input id="designation"></div>
-              <div class="field"><label>Cliente</label><input id="client"></div>
-              <div class="field"><label>Operação</label><input id="operation" placeholder="Ex.: OP10"></div>
-              <div class="field"><label>Máquina</label><input id="machine" placeholder="Ex.: UMC-750-1"></div>
-              <div class="field"><label>Programa CNC</label><input id="program"></div>
-              <div class="field"><label>Desenho</label><input id="drawing"></div>
-              <div class="field"><label>Revisão</label><input id="revision"></div>
-              <div class="field"><label>Data atualização</label><input id="updated" disabled></div>
-            </div>
-          </div>
+    function setLoginMsg(text, type=""){const box=el("loginMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
+    function setCreateMsg(text, type=""){const box=el("createMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
+    function setStatus(text, error=false){const box=el("statusBar");box.textContent=text||"";box.style.color=error?"#b42318":"#687386";}
+    function showLogin(){el("loginView").classList.remove("hidden");el("appView").classList.add("hidden");}
+    function showApp(user){el("loginView").classList.add("hidden");el("appView").classList.remove("hidden");el("userEmail").textContent=user?.email||"";}
 
-          <div class="card">
-            <div class="section-title">Montagem / Notas</div>
-            <div class="field"><textarea id="notes" placeholder="Instruções de montagem, aperto, referências, observações..."></textarea></div>
-          </div>
+    async function boot(){
+      try{
+        const {data,error}=await sb.auth.getSession();
+        if(error) throw error;
+        if(data?.session?.user){showApp(data.session.user);await loadSetups();}else{showLogin();}
+        sb.auth.onAuthStateChange(async(_event,newSession)=>{
+          if(newSession?.user){showApp(newSession.user);await loadSetups();}else{showLogin();}
+        });
+      }catch(err){console.error(err);showLogin();setLoginMsg("Erro ao iniciar: "+(err?.message||err),"error");}
+    }
 
-          <div class="card">
-            <div class="row-between"><div class="section-title">Fotos da montagem</div><div class="small">Máximo 2 · 1 MB cada</div></div>
-            <div class="photos">
-              <div class="photo-box" id="photoBox0"><input type="file" accept="image/jpeg,image/png,image/webp" id="photoInput0"></div>
-              <div class="photo-box" id="photoBox1"><input type="file" accept="image/jpeg,image/png,image/webp" id="photoInput1"></div>
-            </div>
-          </div>
+    async function login(event){
+      event.preventDefault();
+      const btn=el("loginBtn"),email=el("loginEmail").value.trim(),password=el("loginPassword").value;
+      setLoginMsg("");btn.disabled=true;btn.textContent="A entrar...";
+      try{
+        const {data,error}=await sb.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        if(!data?.session?.user) throw new Error("Sessão não criada.");
+        showApp(data.session.user);await loadSetups();
+      }catch(err){console.error(err);setLoginMsg("Não foi possível entrar: "+(err?.message||err),"error");}
+      finally{btn.disabled=false;btn.textContent="Entrar";}
+      return false;
+    }
 
-          <div class="card">
-            <div class="accordion">
-              <button class="acc-head" data-target="toolsBody"><span>Ferramentas <span id="toolCount" class="small"></span></span><span>−</span></button>
-              <div id="toolsBody" class="acc-body">
-                <div class="table-wrap"><table>
-                  <thead><tr><th>T</th><th>Tipo</th><th>Código interno FABCAST</th><th>Suporte</th><th>Ø</th><th>Comp. ferramenta</th><th>Comp. alonga</th><th></th></tr></thead>
-                  <tbody id="toolsRows"></tbody>
-                </table></div>
-                <div class="toolbar"><button class="btn btn-secondary" id="addToolBtn">+ Adicionar ferramenta</button></div>
-              </div>
-            </div>
+    async function logout(){await sb.auth.signOut();setups=[];renderSetups();showLogin();}
 
-            <div class="accordion">
-              <button class="acc-head" data-target="originsBody"><span>Origens <span id="originCount" class="small"></span></span><span>−</span></button>
-              <div id="originsBody" class="acc-body">
-                <div class="table-wrap"><table>
-                  <thead><tr><th>Origem</th><th>X</th><th>Y</th><th>Z</th><th>A</th><th>B</th><th>C</th><th>Notas</th><th></th></tr></thead>
-                  <tbody id="originsRows"></tbody>
-                </table></div>
-                <div class="toolbar"><button class="btn btn-secondary" id="addOriginBtn">+ Adicionar origem</button></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
-</div>
+    async function loadSetups(){
+      setStatus("A carregar setups...");
+      try{
+        const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").order("updated_at",{ascending:false});
+        if(error) throw error;
+        setups=data||[];renderSetups();
+        setStatus(setups.length===0?"Ligação ao Supabase OK. Ainda não existem setups.":"Ligação ao Supabase OK · "+setups.length+" setup(s).");
+      }catch(err){console.error(err);setups=[];renderSetups();setStatus("Erro ao ler o Supabase: "+(err?.message||err),true);}
+    }
 
-<div id="newModal" class="modal hidden">
-  <div class="modal-card">
-    <div class="row-between"><h2>Novo Setup</h2><button class="btn btn-secondary" id="closeModal">Fechar</button></div>
-    <div class="modal-grid">
-      <div class="field"><label>Código interno peça</label><input id="mCode" maxlength="8" inputmode="numeric" placeholder="Opcional"></div>
-      <div class="field"><label>Designação *</label><input id="mDesignation"></div>
-      <div class="field"><label>Cliente</label><input id="mClient"></div>
-      <div class="field"><label>Operação *</label><input id="mOperation" placeholder="OP10"></div>
-      <div class="field"><label>Máquina *</label><input id="mMachine"></div>
-      <div class="field"><label>Programa CNC</label><input id="mProgram"></div>
-    </div>
-    <div class="modal-actions"><button class="btn btn-secondary" id="cancelModal">Cancelar</button><button class="btn btn-primary" id="createSetup">Criar setup</button></div>
-  </div>
-</div>
+    function renderSetups(){
+      const list=el("setupList");if(!list)return;
+      const q=(el("searchInput")?.value||"").trim().toLowerCase();
+      const filtered=setups.filter(s=>![s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().indexOf(q));
+      const finalList=q?setups.filter(s=>[s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().includes(q)):setups;
+      if(finalList.length===0){list.innerHTML='<div class="empty">Nenhum setup encontrado.</div>';return;}
+      list.innerHTML=finalList.map(s=>`<article class="setup-item"><div class="setup-head"><div class="setup-code">${escapeHtml(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${escapeHtml(s.estado||"Ativo")}</span></div><div class="setup-name">${escapeHtml(s.designacao||"")}</div><div class="setup-meta">${escapeHtml(s.cliente||"Sem cliente")} · ${escapeHtml(s.operacao||"")} · ${escapeHtml(s.maquina||"")}${s.programa_cnc?" · Prog. "+escapeHtml(s.programa_cnc):""}</div></article>`).join("");
+    }
 
-<div id="printArea" class="print-only"></div>
+    function openNewSetup(){clearNewSetup();setCreateMsg("");el("newSetupModal").classList.remove("hidden");setTimeout(()=>el("mCode").focus(),0);}
+    function closeNewSetup(){el("newSetupModal").classList.add("hidden");}
+    function backdropClose(event){if(event.target===el("newSetupModal"))closeNewSetup();}
+    function clearNewSetup(){["mCode","mDesignation","mClient","mOperation","mMachine","mProgram"].forEach(id=>el(id).value="");}
 
-<script>
-const SUPABASE_URL = "https://sxjvcogannhewhoovdar.supabase.co";
-const SUPABASE_KEY = "sb_publishable_wa3NLkXzs6jbUDkWbPaj3Q_Rt1RTMVx";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    async function createSetup(event){
+      event.preventDefault();
+      const btn=el("createBtn");
+      const code=el("mCode").value.trim(),designation=el("mDesignation").value.trim(),client=el("mClient").value.trim(),operation=el("mOperation").value.trim(),machine=el("mMachine").value.trim(),program=el("mProgram").value.trim();
+      setCreateMsg("");
+      if(code&&!/^\d{8}$/.test(code)){setCreateMsg("O código interno da peça deve ter exatamente 8 dígitos.","error");return false;}
+      if(!designation||!operation||!machine){setCreateMsg("Designação, Operação e Máquina são obrigatórios.","error");return false;}
+      btn.disabled=true;btn.textContent="A criar...";setCreateMsg("A gravar no Supabase...");
+      try{
+        const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+        if(sessionError) throw sessionError;
+        if(!sessionData?.session) throw new Error("Sessão terminada. Entre novamente.");
+        const payload={codigo_peca:code||null,designacao,cliente:client||null,operacao:operation,maquina:machine,programa_cnc:program||null,estado:"Ativo"};
+        const {data,error}=await sb.from("setups").insert([payload]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
+        if(error) throw error;
+        if(!data?.id) throw new Error("O Supabase não devolveu o ID do novo setup.");
+        setups.unshift(data);renderSetups();setCreateMsg("Setup criado com sucesso.","ok");setStatus("Setup criado com sucesso no Supabase.");
+        setTimeout(()=>{closeNewSetup();clearNewSetup();setCreateMsg("");},500);
+      }catch(err){console.error("Erro ao criar setup:",err);setCreateMsg("Erro ao criar setup: "+(err?.message||err),"error");}
+      finally{btn.disabled=false;btn.textContent="Criar setup";}
+      return false;
+    }
 
-let setups = [];
-let currentId = null;
-let currentTools = [];
-let currentOrigins = [];
-let currentPhotos = [];
-const $ = id => document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-const nil=v=>v===''?null:v;
-const num=v=>v===''?null:Number(String(v).replace(',','.'));
-const fmtDate=v=>v?new Date(v).toLocaleString('pt-PT'):'';
-
-function setStatus(msg, err=false) {
-  $('statusLine').textContent = msg || '';
-  $('statusLine').style.color = err ? '#be3d3d' : '#6c7587';
-}
-
-async function boot(){
-  const { data: { session } } = await sb.auth.getSession();
-  if(session) showApp(session.user); else showLogin();
-  sb.auth.onAuthStateChange((_event, session)=> session ? showApp(session.user) : showLogin());
-}
-
-function showLogin(){
-  $('loginView').classList.remove('hidden'); $('appView').classList.add('hidden');
-}
-async function showApp(user){
-  $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden');
-  $('userEmail').textContent = user.email || '';
-  await loadSetups();
-}
-
-$('loginBtn').onclick = async ()=>{
-  $('loginMsg').textContent='';
-  const email=$('loginEmail').value.trim(), password=$('loginPassword').value;
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  if(error) $('loginMsg').textContent = 'Não foi possível entrar: ' + error.message;
-};
-$('logoutBtn').onclick=()=>sb.auth.signOut();
-
-async function loadSetups(){
-  setStatus('A carregar...');
-  const { data, error } = await sb.from('setups').select('*').order('updated_at',{ascending:false});
-  if(error){setStatus(error.message,true);return;}
-  setups=data||[]; setStatus(''); renderList();
-}
-
-function renderList(){
-  const q=$('globalSearch').value.toLowerCase().trim();
-  const fc=$('filterClient').value, fm=$('filterMachine').value, fo=$('filterOperation').value.toLowerCase().trim(), fs=$('filterStatus').value;
-  const arr=setups.filter(s=>{
-    const hay=[s.codigo_peca,s.designacao,s.cliente,s.programa_cnc,s.maquina,s.operacao].join(' ').toLowerCase();
-    return (!q||hay.includes(q))&&(!fc||s.cliente===fc)&&(!fm||s.maquina===fm)&&(!fo||(s.operacao||'').toLowerCase().includes(fo))&&(!fs||s.estado===fs);
-  });
-  $('setupCount').textContent=`${arr.length} setup${arr.length===1?'':'s'}`;
-  $('setupList').innerHTML=arr.length?arr.map(s=>`<div class="setup-item ${s.id===currentId?'active':''}" data-id="${s.id}">
-    <div class="row-between"><div class="setup-code">${esc(s.codigo_peca||'SEM CÓDIGO')}</div><span class="badge">${esc(s.estado)}</span></div>
-    <div class="setup-sub">${esc(s.designacao||'Sem designação')}</div>
-    <div class="setup-sub">${esc(s.maquina)} · ${esc(s.operacao)}${s.cliente?' · '+esc(s.cliente):''}</div></div>`).join(''):'<div class="empty">Ainda não existem setups.</div>';
-  document.querySelectorAll('.setup-item').forEach(el=>el.onclick=()=>openSetup(el.dataset.id));
-  refreshFilters();
-}
-function refreshFilters(){
-  const prevC=$('filterClient').value, prevM=$('filterMachine').value;
-  const clients=[...new Set(setups.map(s=>s.cliente).filter(Boolean))].sort();
-  const machines=[...new Set(setups.map(s=>s.maquina).filter(Boolean))].sort();
-  $('filterClient').innerHTML='<option value="">Todos clientes</option>'+clients.map(x=>`<option>${esc(x)}</option>`).join('');
-  $('filterMachine').innerHTML='<option value="">Todas máquinas</option>'+machines.map(x=>`<option>${esc(x)}</option>`).join('');
-  $('filterClient').value=clients.includes(prevC)?prevC:'';
-  $('filterMachine').value=machines.includes(prevM)?prevM:'';
-}
-function getCurrent(){return setups.find(x=>x.id===currentId)}
-
-async function openSetup(id){
-  currentId=id; const s=getCurrent(); if(!s)return;
-  $('welcomeCard').classList.add('hidden'); $('editor').classList.remove('hidden');
-  $('pieceCode').value=s.codigo_peca||''; $('setupId').value=s.id; $('designation').value=s.designacao||'';
-  $('client').value=s.cliente||''; $('operation').value=s.operacao||''; $('machine').value=s.maquina||'';
-  $('program').value=s.programa_cnc||''; $('drawing').value=s.desenho||''; $('revision').value=s.revisao||'';
-  $('status').value=s.estado||'Ativo'; $('notes').value=s.montagem_notas||''; $('updated').value=fmtDate(s.updated_at);
-  $('titleCode').textContent=s.codigo_peca||'Sem código interno'; $('titleDesignation').textContent=s.designacao||'';
-  $('statusBadge').textContent=s.estado||'Ativo';
-  await Promise.all([loadTools(),loadOrigins(),loadPhotos()]);
-  renderList();
-}
-
-async function saveSetup(){
-  if(!currentId)return;
-  const code=$('pieceCode').value.trim();
-  if(code && !/^\d{8}$/.test(code)){alert('O código interno da peça deve ter 8 dígitos.');return;}
-  const payload={
-    codigo_peca:nil(code), designacao:$('designation').value.trim(), cliente:nil($('client').value.trim()),
-    operacao:$('operation').value.trim(), maquina:$('machine').value.trim(), programa_cnc:nil($('program').value.trim()),
-    desenho:nil($('drawing').value.trim()), revisao:nil($('revision').value.trim()),
-    estado:$('status').value, montagem_notas:nil($('notes').value.trim()), updated_at:new Date().toISOString()
-  };
-  if(!payload.designacao||!payload.operacao||!payload.maquina){alert('Designação, Operação e Máquina são obrigatórios.');return;}
-  setStatus('A guardar...');
-  const { data,error }=await sb.from('setups').update(payload).eq('id',currentId).select().single();
-  if(error){setStatus(error.message,true);return;}
-  const idx=setups.findIndex(x=>x.id===currentId); setups[idx]=data; setStatus('Guardado.'); openSetup(currentId);
-}
-$('saveBtn').onclick=saveSetup;
-
-function fecharModalNovoSetup(){
-  $('newModal').classList.add('hidden');
-}
-
-function limparModalNovoSetup(){
-  ['mCode','mDesignation','mClient','mOperation','mMachine','mProgram'].forEach(id=>$(id).value='');
-}
-
-$('newSetupBtn').onclick=()=>{
-  limparModalNovoSetup();
-  $('newModal').classList.remove('hidden');
-  setTimeout(()=>$('mCode').focus(),0);
-};
-
-$('closeModal').onclick=$('cancelModal').onclick=fecharModalNovoSetup;
-
-$('newModal').addEventListener('click',(e)=>{
-  if(e.target===$('newModal')) fecharModalNovoSetup();
-});
-
-$('createSetup').onclick=async()=>{
-  const btn=$('createSetup');
-  const code=$('mCode').value.trim();
-  const designation=$('mDesignation').value.trim();
-  const operation=$('mOperation').value.trim();
-  const machine=$('mMachine').value.trim();
-
-  if(!designation||!operation||!machine){
-    alert('Preencha Designação, Operação e Máquina.');
-    return;
-  }
-
-  if(code && !/^\d{8}$/.test(code)){
-    alert('Se existir, o código interno da peça deve ter 8 dígitos.');
-    return;
-  }
-
-  const row={
-    codigo_peca:nil(code),
-    designacao,
-    cliente:nil($('mClient').value.trim()),
-    operacao,
-    maquina:machine,
-    programa_cnc:nil($('mProgram').value.trim()),
-    estado:'Ativo'
-  };
-
-  try{
-    btn.disabled=true;
-    btn.textContent='A criar...';
-
-    const {data,error}=await sb
-      .from('setups')
-      .insert(row)
-      .select()
-      .single();
-
-    if(error) throw error;
-
-    fecharModalNovoSetup();
-    limparModalNovoSetup();
-
-    await loadSetups();
-    await openSetup(data.id);
-  }catch(err){
-    console.error('Erro ao criar setup:',err);
-    alert('Erro ao criar setup: '+(err?.message||err));
-  }finally{
-    btn.disabled=false;
-    btn.textContent='Criar setup';
-  }
-};
-
-$('deleteBtn').onclick=async()=>{
-  if(!currentId||!confirm('Eliminar este setup e todos os seus dados?'))return;
-  for(const p of currentPhotos) if(p.storage_path) await sb.storage.from('setup-fotos').remove([p.storage_path]);
-  const {error}=await sb.from('setups').delete().eq('id',currentId);
-  if(error){alert(error.message);return;}
-  setups=setups.filter(x=>x.id!==currentId); currentId=null;
-  $('editor').classList.add('hidden');$('welcomeCard').classList.remove('hidden');renderList();
-};
-
-async function loadTools(){
-  const {data,error}=await sb.from('setup_ferramentas').select('*').eq('setup_id',currentId).order('ordem');
-  if(error){setStatus(error.message,true);return;} currentTools=data||[]; renderTools();
-}
-function renderTools(){
-  $('toolCount').textContent=`(${currentTools.length})`;
-  $('toolsRows').innerHTML=currentTools.map((t,i)=>`<tr>
-    <td><input value="${esc(t.posicao_t||'')}" data-tool="${i}" data-k="posicao_t"></td>
-    <td><input value="${esc(t.tipo||'')}" data-tool="${i}" data-k="tipo"></td>
-    <td><input value="${esc(t.codigo_interno||'')}" data-tool="${i}" data-k="codigo_interno" placeholder="5xxxxxxx"></td>
-    <td><input value="${esc(t.suporte||'')}" data-tool="${i}" data-k="suporte"></td>
-    <td><input value="${esc(t.diametro??'')}" data-tool="${i}" data-k="diametro"></td>
-    <td><input value="${esc(t.comp_ferramenta??'')}" data-tool="${i}" data-k="comp_ferramenta"></td>
-    <td><input value="${esc(t.comp_alonga??'')}" data-tool="${i}" data-k="comp_alonga"></td>
-    <td><button class="btn btn-danger" data-del-tool="${i}">×</button></td></tr>`).join('');
-  document.querySelectorAll('[data-tool]').forEach(el=>el.onchange=()=>updateTool(+el.dataset.tool,el.dataset.k,el.value));
-  document.querySelectorAll('[data-del-tool]').forEach(b=>b.onclick=()=>deleteTool(+b.dataset.delTool));
-}
-async function updateTool(i,k,v){
-  const t=currentTools[i]; if(!t)return;
-  if(k==='codigo_interno' && v.trim() && !/^5\d{7}$/.test(v.trim())){alert('O código interno da ferramenta deve ter 8 dígitos e começar por 5.');renderTools();return;}
-  const numeric=['diametro','comp_ferramenta','comp_alonga'].includes(k);
-  const val=numeric?num(v.trim()):nil(v.trim());
-  const {data,error}=await sb.from('setup_ferramentas').update({[k]:val}).eq('id',t.id).select().single();
-  if(error){alert(error.message);renderTools();return;} currentTools[i]=data;
-}
-$('addToolBtn').onclick=async()=>{
-  const {data,error}=await sb.from('setup_ferramentas').insert({setup_id:currentId,ordem:currentTools.length}).select().single();
-  if(error){alert(error.message);return;} currentTools.push(data);renderTools();
-};
-async function deleteTool(i){const t=currentTools[i];const {error}=await sb.from('setup_ferramentas').delete().eq('id',t.id);if(error){alert(error.message);return;}currentTools.splice(i,1);renderTools();}
-
-async function loadOrigins(){
-  const {data,error}=await sb.from('setup_origens').select('*').eq('setup_id',currentId).order('ordem');
-  if(error){setStatus(error.message,true);return;} currentOrigins=data||[]; renderOrigins();
-}
-function renderOrigins(){
-  $('originCount').textContent=`(${currentOrigins.length})`;
-  $('originsRows').innerHTML=currentOrigins.map((o,i)=>`<tr>${['origem','x','y','z','a','b','c','notas'].map(k=>`<td><input value="${esc(o[k]??'')}" data-origin="${i}" data-k="${k}"></td>`).join('')}<td><button class="btn btn-danger" data-del-origin="${i}">×</button></td></tr>`).join('');
-  document.querySelectorAll('[data-origin]').forEach(el=>el.onchange=()=>updateOrigin(+el.dataset.origin,el.dataset.k,el.value));
-  document.querySelectorAll('[data-del-origin]').forEach(b=>b.onclick=()=>deleteOrigin(+b.dataset.delOrigin));
-}
-async function updateOrigin(i,k,v){
-  const o=currentOrigins[i]; const numeric=['x','y','z','a','b','c'].includes(k); const val=numeric?num(v.trim()):nil(v.trim());
-  const {data,error}=await sb.from('setup_origens').update({[k]:val}).eq('id',o.id).select().single();
-  if(error){alert(error.message);renderOrigins();return;} currentOrigins[i]=data;
-}
-$('addOriginBtn').onclick=async()=>{
-  const {data,error}=await sb.from('setup_origens').insert({setup_id:currentId,origem:'G54',ordem:currentOrigins.length}).select().single();
-  if(error){alert(error.message);return;} currentOrigins.push(data);renderOrigins();
-};
-async function deleteOrigin(i){const o=currentOrigins[i];const {error}=await sb.from('setup_origens').delete().eq('id',o.id);if(error){alert(error.message);return;}currentOrigins.splice(i,1);renderOrigins();}
-
-async function loadPhotos(){
-  const {data,error}=await sb.from('setup_fotos').select('*').eq('setup_id',currentId).order('ordem');
-  if(error){setStatus(error.message,true);return;} currentPhotos=data||[];
-  for(const p of currentPhotos){
-    const {data:signed,error:e}=await sb.storage.from('setup-fotos').createSignedUrl(p.storage_path,3600);
-    p.signedUrl=e?null:signed.signedUrl;
-  }
-  renderPhotos();
-}
-function renderPhotos(){
-  for(let i=0;i<2;i++){
-    const box=$('photoBox'+i), p=currentPhotos.find(x=>x.ordem===i+1);
-    box.innerHTML=p&&p.signedUrl?`<img src="${p.signedUrl}" alt="Foto ${i+1}"><div class="photo-actions"><button class="btn btn-danger" data-photo-del="${i+1}">×</button></div>`:`<input type="file" accept="image/jpeg,image/png,image/webp" id="photoInput${i}">`;
-  }
-  for(let i=0;i<2;i++){const inp=$('photoInput'+i);if(inp)inp.onchange=e=>uploadPhoto(i+1,e.target.files[0]);}
-  document.querySelectorAll('[data-photo-del]').forEach(b=>b.onclick=()=>deletePhoto(+b.dataset.photoDel));
-}
-async function uploadPhoto(ordem,file){
-  if(!file)return;
-  if(file.size>1024*1024){alert('A foto ultrapassa 1 MB. Reduza/comprima a imagem antes de enviar.');return;}
-  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-  const path=`setups/${currentId}/foto_${ordem}.${ext}`;
-  const old=currentPhotos.find(x=>x.ordem===ordem);
-  if(old?.storage_path) await sb.storage.from('setup-fotos').remove([old.storage_path]);
-  const {error:upErr}=await sb.storage.from('setup-fotos').upload(path,file,{upsert:true,contentType:file.type});
-  if(upErr){alert(upErr.message);return;}
-  let res;
-  if(old) res=await sb.from('setup_fotos').update({storage_path:path}).eq('id',old.id).select().single();
-  else res=await sb.from('setup_fotos').insert({setup_id:currentId,storage_path:path,ordem}).select().single();
-  if(res.error){alert(res.error.message);return;}
-  await loadPhotos();
-}
-async function deletePhoto(ordem){
-  const p=currentPhotos.find(x=>x.ordem===ordem); if(!p)return;
-  await sb.storage.from('setup-fotos').remove([p.storage_path]);
-  const {error}=await sb.from('setup_fotos').delete().eq('id',p.id);
-  if(error){alert(error.message);return;} await loadPhotos();
-}
-
-['globalSearch','filterOperation'].forEach(id=>$(id).addEventListener('input',renderList));
-['filterClient','filterMachine','filterStatus'].forEach(id=>$(id).addEventListener('change',renderList));
-document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&!$('newModal').classList.contains('hidden')) fecharModalNovoSetup();});
-document.querySelectorAll('.acc-head').forEach(b=>b.onclick=()=>{const body=$(b.dataset.target);const open=!body.classList.contains('hidden');body.classList.toggle('hidden');b.lastElementChild.textContent=open?'+':'−';});
-
-$('printBtn').onclick=()=>{
-  const s=getCurrent(); if(!s)return;
-  const tools=currentTools.map(t=>`<tr><td>${esc(t.posicao_t||'')}</td><td>${esc(t.codigo_interno||'')}</td><td>${esc(t.tipo||'')}</td><td>${esc(t.suporte||'')}</td><td>${esc(t.diametro??'')}</td><td>${esc(t.comp_ferramenta??'')}</td><td>${esc(t.comp_alonga??'')}</td></tr>`).join('');
-  const origins=currentOrigins.map(o=>`<tr><td>${esc(o.origem||'')}</td><td>${esc(o.x??'')}</td><td>${esc(o.y??'')}</td><td>${esc(o.z??'')}</td><td>${esc(o.a??'')}</td><td>${esc(o.b??'')}</td><td>${esc(o.c??'')}</td><td>${esc(o.notas||'')}</td></tr>`).join('');
-  const meta=`<div class="p-meta"><div><b>Código:</b> ${esc(s.codigo_peca||'—')}</div><div><b>Designação:</b> ${esc(s.designacao)}</div><div><b>Cliente:</b> ${esc(s.cliente||'—')}</div><div><b>Operação:</b> ${esc(s.operacao)}</div><div><b>Máquina:</b> ${esc(s.maquina)}</div><div><b>Programa CNC:</b> ${esc(s.programa_cnc||'—')}</div><div><b>Desenho:</b> ${esc(s.desenho||'—')}</div><div><b>Revisão:</b> ${esc(s.revisao||'—')}</div><div><b>Atualizado:</b> ${esc(fmtDate(s.updated_at))}</div></div>`;
-  $('printArea').innerHTML=`<section class="print-page"><div class="p-head"><div class="p-title">FABCAST · Folha CNC — Ferramentas</div>${meta}</div><div class="p-section">Relação de ferramentas</div><table class="p-table"><thead><tr><th>T</th><th>Código interno</th><th>Tipo</th><th>Suporte</th><th>Ø</th><th>Comp. ferramenta</th><th>Comp. alonga</th></tr></thead><tbody>${tools||'<tr><td colspan="7">Sem ferramentas registadas.</td></tr>'}</tbody></table></section>
-  <section class="print-page"><div class="p-head"><div class="p-title">FABCAST · Folha CNC — Origens</div>${meta}</div><div class="p-section">Tabela de origens</div><table class="p-table"><thead><tr><th>Origem</th><th>X</th><th>Y</th><th>Z</th><th>A</th><th>B</th><th>C</th><th>Notas</th></tr></thead><tbody>${origins||'<tr><td colspan="8">Sem origens registadas.</td></tr>'}</tbody></table></section>`;
-  window.print();
-};
-
-boot();
-</script>
+    function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));}
+    document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!el("newSetupModal").classList.contains("hidden"))closeNewSetup();});
+    window.login=login;window.logout=logout;window.openNewSetup=openNewSetup;window.closeNewSetup=closeNewSetup;window.backdropClose=backdropClose;window.createSetup=createSetup;window.renderSetups=renderSetups;
+    boot();
+  </script>
 </body>
 </html>
