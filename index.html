@@ -2,454 +2,451 @@
 <html lang="pt-PT">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>FABCAST · Setup CNC</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{--nav:#111827;--blue:#2457d6;--bg:#f4f6f9;--card:#fff;--line:#dce2ea;--text:#172033;--muted:#687386;--green:#16794f;--red:#b42318;--shadow:0 10px 30px rgba(17,24,39,.08)}
-    *{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+    :root{
+      --nav:#101827;--nav2:#213454;--blue:#2457d6;--bg:#f4f6f9;--card:#fff;
+      --line:#dce2ea;--text:#172033;--muted:#687386;--green:#16794f;--red:#b42318;
+      --amber:#a15c00;--shadow:0 10px 30px rgba(17,24,39,.08)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}.hidden{display:none!important}
     .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#111827,#20345a)}
-    .login-card{width:min(420px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.25)}
-    .brand{font-size:28px;font-weight:900;letter-spacing:.04em;margin-bottom:4px}.subtitle{color:var(--muted);margin-bottom:22px}
-    .field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px}.field input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;outline:none;background:#fff}.field input:focus{border-color:#8cabff;box-shadow:0 0 0 3px rgba(36,87,214,.10)}
-    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800}.btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--line);color:var(--text)}.login-card .btn{width:100%}
-    .msg{min-height:20px;margin-top:12px;font-size:13px;color:var(--muted)}.msg.error{color:var(--red)}.msg.ok{color:var(--green)}
-    .app-shell{min-height:100vh;display:grid;grid-template-columns:230px 1fr}aside{background:var(--nav);color:#fff;padding:22px 18px;display:flex;flex-direction:column}.side-brand{font-weight:900;font-size:22px;margin-bottom:28px}.nav-item{padding:11px 12px;border-radius:10px;color:#d3dae5;background:#263857;font-weight:700}.version{margin-top:auto;color:#99a5b8;font-size:12px}
-    .nav-button{width:100%;text-align:left;border:0;margin:0 0 7px 0;cursor:pointer}
-    .nav-button.active{background:#2f4770;color:#fff}
-    .parts-head{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:10px 12px;font-size:12px;font-weight:900;color:var(--muted);border-bottom:1px solid var(--line)}
-    .part-row{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:12px;border-bottom:1px solid var(--line);align-items:center}
-    .part-row:last-child{border-bottom:0}
-    .part-code{font-weight:900;color:var(--blue)}
-    .source-note{font-size:13px;color:var(--muted);margin-top:4px}
-
-    main{min-width:0}.topbar{min-height:70px;background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;gap:12px;align-items:center}.topbar .title{font-weight:900;font-size:20px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}.user-email{color:var(--muted);font-size:13px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .page{padding:24px;max-width:1200px;margin:0 auto}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.toolbar h1{margin:0;font-size:24px}.search{margin-bottom:16px}.search input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.statusbar{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--muted);font-size:13px;margin-bottom:14px}
-    .setup-list{display:grid;gap:10px}.setup-item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.setup-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.setup-code{font-weight:900;font-size:16px}.badge{font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;background:#eaf7f1;color:var(--green)}.setup-name{font-weight:700;margin-top:6px}.setup-meta{color:var(--muted);font-size:13px;margin-top:5px}.empty{text-align:center;color:var(--muted);padding:40px 10px}
-    .modal{position:fixed;inset:0;background:rgba(15,23,42,.50);display:grid;place-items:center;z-index:100;padding:20px}.modal-card{width:min(720px,100%);background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.25);padding:20px}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.modal-head h2{margin:0}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
-    @media(max-width:800px){.app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.topbar{padding:12px 14px}.user-email{display:none}}
+    .login-card{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.25)}
+    .brand{font-size:28px;font-weight:900;letter-spacing:.04em}.subtitle{color:var(--muted);margin:5px 0 22px}
+    .field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px}
+    .field input,.field textarea,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;outline:none;background:#fff}
+    .field textarea{min-height:90px;resize:vertical}
+    .field input:focus,.field textarea:focus,.field select:focus{border-color:#8cabff;box-shadow:0 0 0 3px rgba(36,87,214,.10)}
+    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800}
+    .btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--line);color:var(--text)}
+    .btn-danger{background:#fff;border:1px solid #f0b8b4;color:var(--red)}
+    .login-card .btn{width:100%}.msg{min-height:20px;margin-top:12px;font-size:13px;color:var(--muted)}
+    .msg.error{color:var(--red)}.msg.ok{color:var(--green)}
+    .app-shell{min-height:100vh;display:grid;grid-template-columns:245px 1fr}
+    aside{background:var(--nav);color:#fff;padding:22px 18px;display:flex;flex-direction:column}
+    .side-brand{font-weight:900;font-size:22px;margin-bottom:26px}
+    .nav-button{width:100%;text-align:left;border:0;padding:11px 12px;border-radius:10px;margin-bottom:7px;color:#d3dae5;background:transparent;font-weight:750}
+    .nav-button:hover{background:#1b2b46}.nav-button.active{background:var(--nav2);color:#fff}
+    .side-bottom{margin-top:auto}.version{color:#99a5b8;font-size:12px;margin-bottom:12px}
+    main{min-width:0}.topbar{min-height:70px;background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;gap:12px}
+    .topbar .title{font-weight:900;font-size:20px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+    .user-email{color:var(--muted);font-size:13px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .page{padding:24px;max-width:1220px;margin:0 auto}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.toolbar h1{margin:0;font-size:24px}
+    .sub{color:var(--muted);font-size:13px;margin-top:4px}.search{margin-bottom:16px}.search input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px}
+    .statusbar{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--muted);font-size:13px;margin-bottom:14px}
+    .list{display:grid;gap:10px}.list-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+    .list-card.clickable{cursor:pointer}.list-card.clickable:hover{border-color:#aebbd0;box-shadow:0 6px 18px rgba(17,24,39,.06)}
+    .row-between{display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .strong{font-weight:900}.muted{color:var(--muted);font-size:13px}.badge{font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;background:#eaf7f1;color:var(--green)}
+    .badge.off{background:#f1f3f6;color:#687386}.empty{text-align:center;color:var(--muted);padding:40px 10px}
+    .table{width:100%;border-collapse:collapse}.table th,.table td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+    .table th{font-size:12px;color:var(--muted);background:#fafbfc}.table tr:last-child td{border-bottom:0}
+    .code{font-weight:900;color:var(--blue)}.actions{display:flex;gap:8px;justify-content:flex-end}
+    .modal{position:fixed;inset:0;background:rgba(15,23,42,.52);display:grid;place-items:center;z-index:100;padding:20px}
+    .modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.25);padding:20px}
+    .modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.modal-head h2{margin:0}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+    .dropzone{border:2px dashed #b7c2d3;border-radius:14px;padding:18px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer}
+    .dropzone.drag{border-color:var(--blue);background:#eef4ff}.dropzone strong{display:block;margin-bottom:5px}.dropzone small{color:var(--muted)}
+    .image-preview{margin-top:12px;display:flex;align-items:flex-start;gap:14px}.image-preview img{width:160px;height:120px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .image-placeholder{width:74px;height:60px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;background:#f8fafc;color:var(--muted);font-size:11px}
+    .support-thumb{width:74px;height:60px;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#fff}
+    .hint{font-size:12px;color:var(--muted)}.warning{color:var(--amber)}
+    @media(max-width:850px){
+      .app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.user-email{display:none}
+      .table-wrap{overflow:auto}
+    }
   </style>
 </head>
 <body>
-  <section id="loginView" class="login-screen">
-    <form class="login-card" onsubmit="login(event)">
-      <div class="brand">FABCAST</div>
-      <div class="subtitle">Setup CNC · V1.0 limpa</div>
-      <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
-      <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
-      <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
-      <div id="loginMsg" class="msg"></div>
-    </form>
-  </section>
+<section id="loginView" class="login-screen">
+  <form class="login-card" onsubmit="login(event)">
+    <div class="brand">FABCAST</div>
+    <div class="subtitle">Setup CNC · V2.0</div>
+    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
+    <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+    <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
+    <div id="loginMsg" class="msg"></div>
+  </form>
+</section>
 
-  <section id="appView" class="app-shell hidden">
-    <aside>
-      <div class="side-brand">FABCAST</div>
-      <button id="navSetups" class="nav-item nav-button active" type="button" onclick="showView('setups')">⚙ Setups CNC</button>
-      <button id="navParts" class="nav-item nav-button" type="button" onclick="showView('parts')">▣ Peças</button>
-      <div class="version">V1.2 · PEÇAS</div>
-    </aside>
-    <main>
-      <header class="topbar">
-        <div id="topPageTitle" class="title">Setup CNC</div>
-        <div class="top-actions"><div id="userEmail" class="user-email"></div><button class="btn btn-secondary" type="button" onclick="logout()">Sair</button></div>
-      </header>
-      <div id="setupsView" class="page">
-        <div class="card">
-          <div class="toolbar"><h1>Setups</h1><button class="btn btn-primary" type="button" onclick="openNewSetup()">+ Novo setup</button></div>
-          <div class="search"><input id="searchInput" placeholder="Pesquisar por código, designação, cliente, máquina ou programa..." oninput="renderSetups()"></div>
-          <div id="statusBar" class="statusbar">A iniciar...</div>
-          <div id="setupList" class="setup-list"></div>
-        </div>
+<section id="appView" class="app-shell hidden">
+  <aside>
+    <div class="side-brand">FABCAST</div>
+    <button id="navSetups" class="nav-button active" onclick="showView('setups')">⚙ Setups CNC</button>
+    <button id="navParts" class="nav-button" onclick="showView('parts')">▣ Peças</button>
+    <button id="navMachines" class="nav-button" onclick="showView('machines')">⌘ Máquinas</button>
+    <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
+    <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
+    <div class="side-bottom">
+      <div class="version">V2.0 · REBUILD</div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div id="topTitle" class="title">Setups CNC</div>
+      <div class="top-actions">
+        <div id="userEmail" class="user-email"></div>
+        <button class="btn btn-secondary" onclick="logout()">Sair</button>
       </div>
+    </header>
 
-      <div id="partsView" class="page hidden">
-        <div class="card">
-          <div class="toolbar">
-            <div>
-              <h1>Peças</h1>
-              <div class="source-note">Código e designação provenientes do Planeamento – Maquinação.</div>
-            </div>
+    <div id="setupsView" class="page">
+      <div class="card">
+        <div class="toolbar"><div><h1>Setups CNC</h1><div class="sub">Peça + operação + máquina.</div></div><button class="btn btn-primary" onclick="openNewSetup()">+ Novo setup</button></div>
+        <div class="search"><input id="setupSearch" placeholder="Pesquisar por código, designação, cliente, operação, máquina ou programa..." oninput="renderSetups()"></div>
+        <div id="setupStatus" class="statusbar">A iniciar...</div>
+        <div id="setupList" class="list"></div>
+      </div>
+    </div>
+
+    <div id="partsView" class="page hidden">
+      <div class="card">
+        <div class="toolbar"><div><h1>Peças</h1><div class="sub">Dados lidos diretamente do Planeamento – Maquinação.</div></div></div>
+        <div class="search"><input id="partsSearch" placeholder="Pesquisar código ou designação..." oninput="renderParts()"></div>
+        <div id="partsStatus" class="statusbar">A carregar...</div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Designação</th></tr></thead><tbody id="partsBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="machinesView" class="page hidden">
+      <div class="card">
+        <div class="toolbar"><div><h1>Máquinas</h1><div class="sub">Dados lidos diretamente do Planeamento – Maquinação.</div></div></div>
+        <div class="search"><input id="machinesSearch" placeholder="Pesquisar máquina, grupo, marca ou modelo..." oninput="renderMachines()"></div>
+        <div id="machinesStatus" class="statusbar">A carregar...</div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Máquina</th><th>Grupo</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Estado</th></tr></thead><tbody id="machinesBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="supportsView" class="page hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div><h1>Suportes</h1><div class="sub">ER16, ER25, ER32, Weldon, mandris e outros tipos definidos por si.</div></div>
+          <button class="btn btn-primary" onclick="openSupport()">+ Novo suporte</button>
+        </div>
+        <div class="search"><input id="supportsSearch" placeholder="Pesquisar tipo ou designação..." oninput="renderSupports()"></div>
+        <div id="supportsStatus" class="statusbar">A carregar...</div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Imagem</th><th>Tipo</th><th>Designação</th><th>Estado</th><th></th></tr></thead><tbody id="supportsBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="originsView" class="page hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div><h1>Tipos de Origem</h1><div class="sub">Lista utilizada mais tarde dentro de cada setup.</div></div>
+          <button class="btn btn-primary" onclick="openOrigin()">+ Novo tipo</button>
+        </div>
+        <div class="search"><input id="originsSearch" placeholder="Pesquisar G54, G55, G154 P1..." oninput="renderOrigins()"></div>
+        <div id="originsStatus" class="statusbar">A carregar...</div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Origem</th><th>Descrição</th><th>Estado</th><th></th></tr></thead><tbody id="originsBody"></tbody></table></div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- SETUP -->
+<section id="setupModal" class="modal hidden" onclick="if(event.target===this)closeModal('setupModal')">
+  <form class="modal-card" onsubmit="saveSetup(event)">
+    <div class="modal-head"><h2 id="setupModalTitle">Novo setup</h2><button type="button" class="btn btn-secondary" onclick="closeModal('setupModal')">Fechar</button></div>
+    <input id="sId" type="hidden">
+    <div class="form-grid">
+      <div class="field"><label>Código interno peça</label><input id="sCode" maxlength="8" inputmode="numeric" list="partsCodes" oninput="syncPart()"></div>
+      <div class="field"><label>Designação *</label><input id="sDesignation" required></div>
+      <div class="field"><label>Cliente</label><input id="sClient"></div>
+      <div class="field"><label>Operação *</label><input id="sOperation" placeholder="Ex.: OP10" required></div>
+      <div class="field"><label>Máquina *</label><input id="sMachine" list="machineCodes" required></div>
+      <div class="field"><label>Programa CNC</label><input id="sProgram"></div>
+    </div>
+    <div id="setupMsg" class="msg"></div>
+    <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeModal('setupModal')">Cancelar</button><button id="setupSaveBtn" class="btn btn-primary">Guardar</button></div>
+  </form>
+</section>
+
+<!-- SUPPORT -->
+<section id="supportModal" class="modal hidden" onclick="if(event.target===this)closeModal('supportModal')">
+  <form class="modal-card" onsubmit="saveSupport(event)">
+    <div class="modal-head"><h2 id="supportModalTitle">Novo suporte</h2><button type="button" class="btn btn-secondary" onclick="closeModal('supportModal')">Fechar</button></div>
+    <input id="supportId" type="hidden">
+    <div class="form-grid">
+      <div class="field"><label>Tipo *</label><input id="supportType" placeholder="Ex.: ER25" required></div>
+      <div class="field"><label>Designação</label><input id="supportDesignation" placeholder="Ex.: Porta-pinça ER25"></div>
+      <div class="field full"><label>Observações</label><textarea id="supportNotes"></textarea></div>
+      <div class="field"><label>Estado</label><select id="supportActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+      <div class="field full">
+        <label>Imagem</label>
+        <div id="supportDrop" class="dropzone" onclick="document.getElementById('supportFile').click()">
+          <strong>Arraste uma imagem para aqui</strong>
+          <small>ou clique para selecionar · JPG, PNG ou WEBP · máximo 2 MB</small>
+        </div>
+        <input id="supportFile" class="hidden" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectSupportFile(this.files[0])">
+        <div id="supportPreviewWrap" class="image-preview hidden">
+          <img id="supportPreview" alt="Pré-visualização">
+          <div>
+            <div id="supportPreviewName" class="strong"></div>
+            <div class="hint" style="margin-top:6px">A imagem é gravada no Supabase quando guardar o suporte.</div>
+            <button type="button" class="btn btn-danger" style="margin-top:10px" onclick="removeSupportImage()">Remover imagem</button>
           </div>
-          <div class="search"><input id="partsSearchInput" placeholder="Pesquisar código ou nome da peça..." oninput="renderPlanningParts()"></div>
-          <div id="partsStatusBar" class="statusbar">A carregar peças...</div>
-          <div id="partsCount" class="source-note" style="margin-bottom:10px"></div>
-          <div class="card" style="padding:0;box-shadow:none">
-            <div class="parts-head"><div>Código</div><div>Designação / nome da peça</div></div>
-            <div id="partsList"></div>
-          </div>
         </div>
       </div>
-    </main>
-  </section>
+    </div>
+    <div id="supportMsg" class="msg"></div>
+    <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeModal('supportModal')">Cancelar</button><button id="supportSaveBtn" class="btn btn-primary">Guardar suporte</button></div>
+  </form>
+</section>
 
-  <section id="newSetupModal" class="modal hidden" onclick="backdropClose(event)">
-    <form class="modal-card" onsubmit="createSetup(event)">
-      <div class="modal-head"><h2>Novo setup</h2><button class="btn btn-secondary" type="button" onclick="closeNewSetup()">Fechar</button></div>
-      <div class="form-grid">
-        <div class="field"><label for="mCode">Código interno peça</label><input id="mCode" maxlength="8" inputmode="numeric" list="partsCodeList" placeholder="Opcional" oninput="syncNewPartFromCode()"></div>
-        <div class="field"><label for="mDesignation">Designação *</label><input id="mDesignation" required></div>
-        <div class="field"><label for="mClient">Cliente</label><input id="mClient"></div>
-        <div class="field"><label for="mOperation">Operação *</label><input id="mOperation" placeholder="Ex.: OP10" required></div>
-        <div class="field"><label for="mMachine">Máquina *</label><input id="mMachine" placeholder="Ex.: UMC-750-1" required></div>
-        <div class="field"><label for="mProgram">Programa CNC</label><input id="mProgram"></div>
-      </div>
-      <div id="createMsg" class="msg"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" type="button" onclick="closeNewSetup()">Cancelar</button><button id="createBtn" class="btn btn-primary" type="submit">Criar setup</button></div>
-    </form>
-  </section>
+<!-- ORIGIN TYPE -->
+<section id="originModal" class="modal hidden" onclick="if(event.target===this)closeModal('originModal')">
+  <form class="modal-card" onsubmit="saveOrigin(event)">
+    <div class="modal-head"><h2 id="originModalTitle">Novo tipo de origem</h2><button type="button" class="btn btn-secondary" onclick="closeModal('originModal')">Fechar</button></div>
+    <input id="originId" type="hidden">
+    <div class="form-grid">
+      <div class="field"><label>Origem *</label><input id="originCode" placeholder="Ex.: G54 ou G154 P1" required></div>
+      <div class="field"><label>Estado</label><select id="originActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+      <div class="field full"><label>Descrição</label><input id="originDescription" placeholder="Opcional"></div>
+    </div>
+    <div id="originMsg" class="msg"></div>
+    <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeModal('originModal')">Cancelar</button><button id="originSaveBtn" class="btn btn-primary">Guardar</button></div>
+  </form>
+</section>
 
+<datalist id="partsCodes"></datalist>
+<datalist id="machineCodes"></datalist>
 
-  <section id="editSetupModal" class="modal hidden" onclick="editBackdropClose(event)">
-    <form class="modal-card" onsubmit="saveSetup(event)">
-      <div class="modal-head">
-        <h2>Setup</h2>
-        <button class="btn btn-secondary" type="button" onclick="closeEditSetup()">Fechar</button>
-      </div>
+<script>
+const SUPABASE_URL="https://sxjvcogannhewhoovdar.supabase.co";
+const SUPABASE_KEY="sb_publishable_wa3NLkXzs6jbUDkWbPaj3Q_Rt1RTMVx";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-      <input id="eId" type="hidden">
+const PLANNING_URL="https://akblvvmoucnkwzutmwls.supabase.co";
+const PLANNING_KEY="sb_publishable_zSpyuREZ6il9a1OdtHVhlQ_oeRoaJs3";
+const planningSb=supabase.createClient(PLANNING_URL,PLANNING_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
 
-      <div class="form-grid">
-        <div class="field">
-          <label for="eCode">Código interno peça</label>
-          <input id="eCode" maxlength="8" inputmode="numeric" list="partsCodeList" placeholder="Opcional" oninput="syncEditPartFromCode()">
-        </div>
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+let setups=[],parts=[],machines=[],supports=[],originTypes=[];
+let supportSelectedFile=null,supportRemoveExisting=false,currentSupportImagePath=null;
+const signedSupportUrls=new Map();
 
-        <div class="field">
-          <label for="eDesignation">Designação *</label>
-          <input id="eDesignation" required>
-        </div>
+function setMsg(id,text,type=""){const x=$(id);if(!x)return;x.textContent=text||"";x.className="msg"+(type?" "+type:"")}
+function setStatus(id,text,error=false){const x=$(id);if(!x)return;x.textContent=text||"";x.style.color=error?"#b42318":"#687386"}
+function closeModal(id){$(id).classList.add("hidden")}
+function showLogin(){$("loginView").classList.remove("hidden");$("appView").classList.add("hidden")}
+function showApp(user){$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("userEmail").textContent=user?.email||""}
 
-        <div class="field">
-          <label for="eClient">Cliente</label>
-          <input id="eClient">
-        </div>
+async function boot(){
+  try{
+    const {data,error}=await sb.auth.getSession();if(error)throw error;
+    if(data?.session?.user){showApp(data.session.user);await loadAll()}else showLogin();
+    sb.auth.onAuthStateChange(async(_,session)=>{if(session?.user){showApp(session.user);await loadAll()}else showLogin()});
+  }catch(e){console.error(e);showLogin();setMsg("loginMsg","Erro ao iniciar: "+(e?.message||e),"error")}
+}
+async function login(ev){
+  ev.preventDefault();const b=$("loginBtn");b.disabled=true;b.textContent="A entrar...";setMsg("loginMsg","");
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});if(error)throw error;
+    showApp(data.session.user);await loadAll();
+  }catch(e){setMsg("loginMsg","Não foi possível entrar: "+(e?.message||e),"error")}
+  finally{b.disabled=false;b.textContent="Entrar"}return false
+}
+async function logout(){await sb.auth.signOut();showLogin()}
 
-        <div class="field">
-          <label for="eOperation">Operação *</label>
-          <input id="eOperation" required>
-        </div>
+async function loadAll(){
+  await Promise.all([loadPlanning(),loadSetups(),loadSupports(),loadOrigins()]);
+}
+async function loadPlanning(){
+  setStatus("partsStatus","A carregar dados do Planeamento...");
+  setStatus("machinesStatus","A carregar dados do Planeamento...");
+  try{
+    const {data,error}=await planningSb.from("app_state").select("data").eq("id",1).single();if(error)throw error;
+    const s=data?.data||{};
+    parts=(Array.isArray(s.parts)?s.parts:[]).map(p=>({id:p.id||"",code:String(p.code||"").trim(),desc:String(p.desc||"").trim()})).filter(p=>p.code||p.desc).sort((a,b)=>a.code.localeCompare(b.code,"pt-PT",{numeric:true}));
+    machines=(Array.isArray(s.machines)?s.machines:[]).map(m=>({id:m.id||"",code:String(m.code||"").trim(),group:String(m.group||"").trim(),type:String(m.type||"").trim(),brand:String(m.brand||"").trim(),model:String(m.model||"").trim(),condition:String(m.condition||"Ativa").trim(),active:m.active!==false})).filter(m=>m.code).sort((a,b)=>a.code.localeCompare(b.code,"pt-PT",{numeric:true}));
+    $("partsCodes").innerHTML=parts.map(p=>`<option value="${esc(p.code)}">${esc(p.desc)}</option>`).join("");
+    $("machineCodes").innerHTML=machines.filter(m=>m.active).map(m=>`<option value="${esc(m.code)}">${esc(m.group)}</option>`).join("");
+    setStatus("partsStatus",`Ligação ao Planeamento OK · ${parts.length} peça(s).`);
+    setStatus("machinesStatus",`Ligação ao Planeamento OK · ${machines.length} máquina(s)/recurso(s).`);
+    renderParts();renderMachines();
+  }catch(e){
+    console.error(e);parts=[];machines=[];renderParts();renderMachines();
+    setStatus("partsStatus","Erro ao ler o Planeamento: "+(e?.message||e),true);
+    setStatus("machinesStatus","Erro ao ler o Planeamento: "+(e?.message||e),true);
+  }
+}
 
-        <div class="field">
-          <label for="eMachine">Máquina *</label>
-          <input id="eMachine" required>
-        </div>
+function showView(view){
+  const names=["setups","parts","machines","supports","origins"];
+  const titles={setups:"Setups CNC",parts:"Peças",machines:"Máquinas",supports:"Suportes",origins:"Tipos de Origem"};
+  names.forEach(n=>{
+    $(n+"View").classList.toggle("hidden",n!==view);
+    const nav=$("nav"+n[0].toUpperCase()+n.slice(1));if(nav)nav.classList.toggle("active",n===view);
+  });
+  $("topTitle").textContent=titles[view]||"FABCAST";
+  if(view==="supports")renderSupports();if(view==="origins")renderOrigins();
+}
 
-        <div class="field">
-          <label for="eProgram">Programa CNC</label>
-          <input id="eProgram">
-        </div>
-      </div>
+async function loadSetups(){
+  setStatus("setupStatus","A carregar setups...");
+  try{
+    const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").order("updated_at",{ascending:false});if(error)throw error;
+    setups=data||[];renderSetups();setStatus("setupStatus",`Ligação ao Supabase OK · ${setups.length} setup(s).`);
+  }catch(e){console.error(e);setups=[];renderSetups();setStatus("setupStatus","Erro ao ler setups: "+(e?.message||e),true)}
+}
+function renderSetups(){
+  const q=($("setupSearch")?.value||"").trim().toLowerCase();
+  const rows=setups.filter(s=>!q||[s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().includes(q));
+  $("setupList").innerHTML=rows.length?rows.map(s=>`<article class="list-card clickable" onclick="openSetup('${s.id}')"><div class="row-between"><div class="strong">${esc(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${esc(s.estado||"Ativo")}</span></div><div style="margin-top:6px;font-weight:750">${esc(s.designacao||"")}</div><div class="muted" style="margin-top:5px">${esc(s.cliente||"Sem cliente")} · ${esc(s.operacao||"")} · ${esc(s.maquina||"")}${s.programa_cnc?" · Prog. "+esc(s.programa_cnc):""}</div></article>`).join(""):'<div class="empty">Nenhum setup encontrado.</div>'
+}
+function openNewSetup(){
+  ["sId","sCode","sDesignation","sClient","sOperation","sMachine","sProgram"].forEach(id=>$(id).value="");
+  $("setupModalTitle").textContent="Novo setup";setMsg("setupMsg","");$("setupModal").classList.remove("hidden")
+}
+function openSetup(id){
+  const s=setups.find(x=>x.id===id);if(!s)return;
+  $("sId").value=s.id;$("sCode").value=s.codigo_peca||"";$("sDesignation").value=s.designacao||"";$("sClient").value=s.cliente||"";$("sOperation").value=s.operacao||"";$("sMachine").value=s.maquina||"";$("sProgram").value=s.programa_cnc||"";
+  $("setupModalTitle").textContent="Editar setup";setMsg("setupMsg","");$("setupModal").classList.remove("hidden")
+}
+function syncPart(){const p=parts.find(x=>x.code===$("sCode").value.trim());if(p)$("sDesignation").value=p.desc}
+async function saveSetup(ev){
+  ev.preventDefault();const id=$("sId").value,code=$("sCode").value.trim(),designation=$("sDesignation").value.trim(),operation=$("sOperation").value.trim(),machine=$("sMachine").value.trim(),b=$("setupSaveBtn");
+  if(code&&!/^\d{8}$/.test(code)){setMsg("setupMsg","O código deve ter exatamente 8 dígitos.","error");return false}
+  if(!designation||!operation||!machine){setMsg("setupMsg","Designação, Operação e Máquina são obrigatórios.","error");return false}
+  b.disabled=true;b.textContent="A guardar...";
+  try{
+    const payload={codigo_peca:code||null,designacao:designation,cliente:$("sClient").value.trim()||null,operacao:operation,maquina:machine,programa_cnc:$("sProgram").value.trim()||null,updated_at:new Date().toISOString()};
+    let res;
+    if(id)res=await sb.from("setups").update(payload).eq("id",id).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
+    else res=await sb.from("setups").insert([{...payload,estado:"Ativo"}]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
+    if(res.error)throw res.error;await loadSetups();closeModal("setupModal");
+  }catch(e){setMsg("setupMsg","Erro ao guardar: "+(e?.message||e),"error")}
+  finally{b.disabled=false;b.textContent="Guardar"}return false
+}
 
-      <div id="editMsg" class="msg"></div>
+function renderParts(){
+  const q=($("partsSearch")?.value||"").trim().toLowerCase(),rows=parts.filter(p=>!q||[p.code,p.desc].join(" ").toLowerCase().includes(q));
+  $("partsBody").innerHTML=rows.length?rows.map(p=>`<tr><td class="code">${esc(p.code)}</td><td>${esc(p.desc)}</td></tr>`).join(""):'<tr><td colspan="2" class="empty">Nenhuma peça encontrada.</td></tr>'
+}
+function renderMachines(){
+  const q=($("machinesSearch")?.value||"").trim().toLowerCase(),rows=machines.filter(m=>!q||[m.code,m.group,m.type,m.brand,m.model,m.condition].join(" ").toLowerCase().includes(q));
+  $("machinesBody").innerHTML=rows.length?rows.map(m=>`<tr><td class="code">${esc(m.code)}</td><td>${esc(m.group||"—")}</td><td>${esc(m.type||"—")}</td><td>${esc(m.brand||"—")}</td><td>${esc(m.model||"—")}</td><td><span class="badge ${m.active?"":"off"}">${esc(m.condition|| (m.active?"Ativa":"Inativa"))}</span></td></tr>`).join(""):'<tr><td colspan="6" class="empty">Nenhuma máquina encontrada.</td></tr>'
+}
 
-      <div class="modal-actions">
-        <button class="btn btn-secondary" type="button" onclick="closeEditSetup()">Cancelar</button>
-        <button id="saveBtn" class="btn btn-primary" type="submit">Guardar alterações</button>
-      </div>
-    </form>
-  </section>
-
-  <datalist id="partsCodeList"></datalist>
-
-  <script>
-    const SUPABASE_URL = "https://sxjvcogannhewhoovdar.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_wa3NLkXzs6jbUDkWbPaj3Q_Rt1RTMVx";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const PLANNING_SUPABASE_URL = "https://akblvvmoucnkwzutmwls.supabase.co";
-    const PLANNING_SUPABASE_KEY = "sb_publishable_zSpyuREZ6il9a1OdtHVhlQ_oeRoaJs3";
-    const planningSb = supabase.createClient(
-      PLANNING_SUPABASE_URL,
-      PLANNING_SUPABASE_KEY,
-      {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
-    );
-
-    let setups = [];
-    let planningParts = [];
-    const el = id => document.getElementById(id);
-
-    function setLoginMsg(text, type=""){const box=el("loginMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
-    function setCreateMsg(text, type=""){const box=el("createMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
-    function setEditMsg(text, type=""){const box=el("editMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
-    function setStatus(text, error=false){const box=el("statusBar");box.textContent=text||"";box.style.color=error?"#b42318":"#687386";}
-    function showLogin(){el("loginView").classList.remove("hidden");el("appView").classList.add("hidden");}
-    function showApp(user){
-      el("loginView").classList.add("hidden");
-      el("appView").classList.remove("hidden");
-      el("userEmail").textContent=user?.email||"";
+async function loadSupports(){
+  setStatus("supportsStatus","A carregar suportes...");
+  try{
+    const {data,error}=await sb.from("suportes").select("id,tipo,designacao,observacoes,ativo,image_path,updated_at").order("tipo");if(error)throw error;
+    supports=data||[];await hydrateSupportUrls();renderSupports();setStatus("supportsStatus",`Supabase OK · ${supports.length} suporte(s).`);
+  }catch(e){console.error(e);supports=[];renderSupports();setStatus("supportsStatus","Tabela 'suportes' ainda não disponível. Execute o SQL de instalação V2.0.","error")}
+}
+async function hydrateSupportUrls(){
+  signedSupportUrls.clear();
+  await Promise.all(supports.filter(s=>s.image_path).map(async s=>{
+    const {data,error}=await sb.storage.from("suportes-imagens").createSignedUrl(s.image_path,3600);
+    if(!error&&data?.signedUrl)signedSupportUrls.set(s.id,data.signedUrl);
+  }));
+}
+function renderSupports(){
+  const q=($("supportsSearch")?.value||"").trim().toLowerCase(),rows=supports.filter(s=>!q||[s.tipo,s.designacao,s.observacoes].join(" ").toLowerCase().includes(q));
+  $("supportsBody").innerHTML=rows.length?rows.map(s=>{
+    const url=signedSupportUrls.get(s.id);
+    const img=url?`<img class="support-thumb" src="${esc(url)}" alt="${esc(s.tipo)}">`:`<div class="image-placeholder">Sem imagem</div>`;
+    return `<tr><td>${img}</td><td class="code">${esc(s.tipo)}</td><td>${esc(s.designacao||"—")}</td><td><span class="badge ${s.ativo?"":"off"}">${s.ativo?"Ativo":"Inativo"}</span></td><td><div class="actions"><button class="btn btn-secondary" onclick="openSupport('${s.id}')">Editar</button></div></td></tr>`
+  }).join(""):'<tr><td colspan="5" class="empty">Nenhum suporte registado.</td></tr>'
+}
+function resetSupportImage(){
+  supportSelectedFile=null;supportRemoveExisting=false;currentSupportImagePath=null;
+  $("supportFile").value="";$("supportPreview").removeAttribute("src");$("supportPreviewWrap").classList.add("hidden");$("supportPreviewName").textContent="";
+}
+async function openSupport(id=""){
+  resetSupportImage();setMsg("supportMsg","");
+  const s=supports.find(x=>x.id===id);
+  $("supportId").value=s?.id||"";$("supportType").value=s?.tipo||"";$("supportDesignation").value=s?.designacao||"";$("supportNotes").value=s?.observacoes||"";$("supportActive").value=String(s?.ativo!==false);
+  $("supportModalTitle").textContent=s?"Editar suporte":"Novo suporte";
+  if(s?.image_path){
+    currentSupportImagePath=s.image_path;
+    const url=signedSupportUrls.get(s.id);
+    if(url){$("supportPreview").src=url;$("supportPreviewName").textContent="Imagem atual";$("supportPreviewWrap").classList.remove("hidden")}
+  }
+  $("supportModal").classList.remove("hidden")
+}
+function selectSupportFile(file){
+  if(!file)return;
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){setMsg("supportMsg","Formato inválido. Use JPG, PNG ou WEBP.","error");return}
+  if(file.size>2*1024*1024){setMsg("supportMsg","A imagem não pode ultrapassar 2 MB.","error");return}
+  supportSelectedFile=file;supportRemoveExisting=false;
+  const url=URL.createObjectURL(file);$("supportPreview").src=url;$("supportPreviewName").textContent=file.name;$("supportPreviewWrap").classList.remove("hidden");setMsg("supportMsg","");
+}
+function removeSupportImage(){
+  supportSelectedFile=null;supportRemoveExisting=true;$("supportFile").value="";$("supportPreview").removeAttribute("src");$("supportPreviewWrap").classList.add("hidden")
+}
+function safeName(name){return String(name||"imagem").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9._-]+/g,"_")}
+async function saveSupport(ev){
+  ev.preventDefault();const b=$("supportSaveBtn"),existingId=$("supportId").value,tipo=$("supportType").value.trim();
+  if(!tipo){setMsg("supportMsg","Indique o tipo de suporte.","error");return false}
+  b.disabled=true;b.textContent="A guardar...";setMsg("supportMsg","A gravar...");
+  try{
+    let id=existingId,imagePath=currentSupportImagePath;
+    const base={tipo,designacao:$("supportDesignation").value.trim()||null,observacoes:$("supportNotes").value.trim()||null,ativo:$("supportActive").value==="true",updated_at:new Date().toISOString()};
+    if(id){
+      const {error}=await sb.from("suportes").update(base).eq("id",id);if(error)throw error;
+    }else{
+      const {data,error}=await sb.from("suportes").insert([base]).select("id").single();if(error)throw error;id=data.id;
     }
-
-    async function boot(){
-      try{
-        const {data,error}=await sb.auth.getSession();
-        if(error) throw error;
-        if(data?.session?.user){showApp(data.session.user);await Promise.all([loadSetups(),loadPlanningParts()]);}else{showLogin();}
-        sb.auth.onAuthStateChange(async(_event,newSession)=>{
-          if(newSession?.user){showApp(newSession.user);await Promise.all([loadSetups(),loadPlanningParts()]);}else{showLogin();}
-        });
-      }catch(err){console.error(err);showLogin();setLoginMsg("Erro ao iniciar: "+(err?.message||err),"error");}
+    if(supportRemoveExisting&&imagePath){
+      await sb.storage.from("suportes-imagens").remove([imagePath]);
+      imagePath=null;
     }
-
-    async function login(event){
-      event.preventDefault();
-      const btn=el("loginBtn"),email=el("loginEmail").value.trim(),password=el("loginPassword").value;
-      setLoginMsg("");btn.disabled=true;btn.textContent="A entrar...";
-      try{
-        const {data,error}=await sb.auth.signInWithPassword({email,password});
-        if(error) throw error;
-        if(!data?.session?.user) throw new Error("Sessão não criada.");
-        showApp(data.session.user);await Promise.all([loadSetups(),loadPlanningParts()]);
-      }catch(err){console.error(err);setLoginMsg("Não foi possível entrar: "+(err?.message||err),"error");}
-      finally{btn.disabled=false;btn.textContent="Entrar";}
-      return false;
+    if(supportSelectedFile){
+      if(imagePath)await sb.storage.from("suportes-imagens").remove([imagePath]);
+      const path=`${id}/${Date.now()}_${safeName(supportSelectedFile.name)}`;
+      const {error:upErr}=await sb.storage.from("suportes-imagens").upload(path,supportSelectedFile,{upsert:false,contentType:supportSelectedFile.type});if(upErr)throw upErr;
+      imagePath=path;
     }
+    const {error:updateErr}=await sb.from("suportes").update({image_path:imagePath,updated_at:new Date().toISOString()}).eq("id",id);if(updateErr)throw updateErr;
+    await loadSupports();closeModal("supportModal");
+  }catch(e){console.error(e);setMsg("supportMsg","Erro ao guardar suporte: "+(e?.message||e),"error")}
+  finally{b.disabled=false;b.textContent="Guardar suporte"}return false
+}
 
-    async function logout(){await sb.auth.signOut();setups=[];renderSetups();showLogin();}
+const drop=$("supportDrop");
+["dragenter","dragover"].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault();drop.classList.add("drag")}));
+["dragleave","drop"].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault();drop.classList.remove("drag")}));
+drop.addEventListener("drop",e=>selectSupportFile(e.dataTransfer.files?.[0]));
 
+async function loadOrigins(){
+  setStatus("originsStatus","A carregar tipos de origem...");
+  try{
+    const {data,error}=await sb.from("tipos_origem").select("id,codigo,descricao,ativo,ordem,updated_at").order("ordem").order("codigo");if(error)throw error;
+    originTypes=data||[];renderOrigins();setStatus("originsStatus",`Supabase OK · ${originTypes.length} tipo(s) de origem.`);
+  }catch(e){console.error(e);originTypes=[];renderOrigins();setStatus("originsStatus","Tabela 'tipos_origem' ainda não disponível. Execute o SQL de instalação V2.0.","error")}
+}
+function renderOrigins(){
+  const q=($("originsSearch")?.value||"").trim().toLowerCase(),rows=originTypes.filter(o=>!q||[o.codigo,o.descricao].join(" ").toLowerCase().includes(q));
+  $("originsBody").innerHTML=rows.length?rows.map(o=>`<tr><td class="code">${esc(o.codigo)}</td><td>${esc(o.descricao||"—")}</td><td><span class="badge ${o.ativo?"":"off"}">${o.ativo?"Ativo":"Inativo"}</span></td><td><div class="actions"><button class="btn btn-secondary" onclick="openOrigin('${o.id}')">Editar</button></div></td></tr>`).join(""):'<tr><td colspan="4" class="empty">Nenhum tipo de origem registado.</td></tr>'
+}
+function openOrigin(id=""){
+  const o=originTypes.find(x=>x.id===id);$("originId").value=o?.id||"";$("originCode").value=o?.codigo||"";$("originDescription").value=o?.descricao||"";$("originActive").value=String(o?.ativo!==false);$("originModalTitle").textContent=o?"Editar tipo de origem":"Novo tipo de origem";setMsg("originMsg","");$("originModal").classList.remove("hidden")
+}
+async function saveOrigin(ev){
+  ev.preventDefault();const id=$("originId").value,codigo=$("originCode").value.trim().toUpperCase(),b=$("originSaveBtn");
+  if(!codigo){setMsg("originMsg","Indique o tipo de origem.","error");return false}
+  b.disabled=true;b.textContent="A guardar...";
+  try{
+    const payload={codigo,descricao:$("originDescription").value.trim()||null,ativo:$("originActive").value==="true",updated_at:new Date().toISOString()};
+    const res=id?await sb.from("tipos_origem").update(payload).eq("id",id):await sb.from("tipos_origem").insert([payload]);
+    if(res.error)throw res.error;await loadOrigins();closeModal("originModal")
+  }catch(e){setMsg("originMsg","Erro ao guardar: "+(e?.message||e),"error")}
+  finally{b.disabled=false;b.textContent="Guardar"}return false
+}
 
-    function showView(view){
-      const setupsActive=view==="setups";
-      el("setupsView").classList.toggle("hidden",!setupsActive);
-      el("partsView").classList.toggle("hidden",setupsActive);
-      el("navSetups").classList.toggle("active",setupsActive);
-      el("navParts").classList.toggle("active",!setupsActive);
-      el("topPageTitle") && (el("topPageTitle").textContent=setupsActive?"Setup CNC":"Peças");
-      if(!setupsActive) renderPlanningParts();
-    }
-
-    async function loadPlanningParts(){
-      const status=el("partsStatusBar");
-      if(status) status.textContent="A carregar peças do Planeamento – Maquinação...";
-
-      try{
-        const {data,error}=await planningSb
-          .from("app_state")
-          .select("data")
-          .eq("id",1)
-          .single();
-
-        if(error) throw error;
-
-        const rawParts=Array.isArray(data?.data?.parts)?data.data.parts:[];
-        planningParts=rawParts
-          .filter(p=>p && (p.code || p.desc))
-          .map(p=>({
-            id:p.id||"",
-            code:String(p.code||"").trim(),
-            desc:String(p.desc||"").trim()
-          }))
-          .sort((a,b)=>a.code.localeCompare(b.code,"pt-PT",{numeric:true}));
-
-        fillPartsDatalist();
-        renderPlanningParts();
-
-        if(status){
-          status.textContent=planningParts.length
-            ? "Ligação ao Planeamento OK."
-            : "Ligação ao Planeamento OK, mas não existem peças registadas.";
-          status.style.color="#687386";
-        }
-      }catch(err){
-        console.error("Erro ao carregar peças do Planeamento:",err);
-        planningParts=[];
-        fillPartsDatalist();
-        renderPlanningParts();
-        if(status){
-          status.textContent="Erro ao ler peças do Planeamento: "+(err?.message||err);
-          status.style.color="#b42318";
-        }
-      }
-    }
-
-    function fillPartsDatalist(){
-      const dl=el("partsCodeList");
-      if(!dl) return;
-      dl.innerHTML=planningParts.map(p=>`<option value="${escapeHtml(p.code)}">${escapeHtml(p.desc)}</option>`).join("");
-    }
-
-    function renderPlanningParts(){
-      const root=el("partsList");
-      if(!root) return;
-
-      const q=(el("partsSearchInput")?.value||"").trim().toLowerCase();
-      const rows=planningParts.filter(p=>
-        !q ||
-        p.code.toLowerCase().includes(q) ||
-        p.desc.toLowerCase().includes(q)
-      );
-
-      el("partsCount").textContent=`${rows.length} peça${rows.length===1?"":"s"}`;
-
-      if(!rows.length){
-        root.innerHTML='<div class="empty">Nenhuma peça encontrada.</div>';
-        return;
-      }
-
-      root.innerHTML=rows.map(p=>`
-        <div class="part-row">
-          <div class="part-code">${escapeHtml(p.code||"—")}</div>
-          <div>${escapeHtml(p.desc||"—")}</div>
-        </div>
-      `).join("");
-    }
-
-    function findPlanningPartByCode(code){
-      const v=String(code||"").trim();
-      return planningParts.find(p=>p.code===v)||null;
-    }
-
-    function syncNewPartFromCode(){
-      const p=findPlanningPartByCode(el("mCode").value);
-      if(p) el("mDesignation").value=p.desc;
-    }
-
-    function syncEditPartFromCode(){
-      const p=findPlanningPartByCode(el("eCode").value);
-      if(p) el("eDesignation").value=p.desc;
-    }
-
-    async function loadSetups(){
-      setStatus("A carregar setups...");
-      try{
-        const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").order("updated_at",{ascending:false});
-        if(error) throw error;
-        setups=data||[];renderSetups();
-        setStatus(setups.length===0?"Ligação ao Supabase OK. Ainda não existem setups.":"Ligação ao Supabase OK · "+setups.length+" setup(s).");
-      }catch(err){console.error(err);setups=[];renderSetups();setStatus("Erro ao ler o Supabase: "+(err?.message||err),true);}
-    }
-
-    function renderSetups(){
-      const list=el("setupList");if(!list)return;
-      const q=(el("searchInput")?.value||"").trim().toLowerCase();
-      const filtered=setups.filter(s=>![s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().indexOf(q));
-      const finalList=q?setups.filter(s=>[s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().includes(q)):setups;
-      if(finalList.length===0){list.innerHTML='<div class="empty">Nenhum setup encontrado.</div>';return;}
-      list.innerHTML=finalList.map(s=>`<article class="setup-item" role="button" tabindex="0" onclick="openSetup('${s.id}')" onkeydown="if(event.key==='Enter') openSetup('${s.id}')"><div class="setup-head"><div class="setup-code">${escapeHtml(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${escapeHtml(s.estado||"Ativo")}</span></div><div class="setup-name">${escapeHtml(s.designacao||"")}</div><div class="setup-meta">${escapeHtml(s.cliente||"Sem cliente")} · ${escapeHtml(s.operacao||"")} · ${escapeHtml(s.maquina||"")}${s.programa_cnc?" · Prog. "+escapeHtml(s.programa_cnc):""}</div><div class="setup-meta" style="margin-top:8px;font-weight:700;color:#2457d6">Abrir setup</div></article>`).join("");
-    }
-
-    function openNewSetup(){clearNewSetup();setCreateMsg("");fillPartsDatalist();el("newSetupModal").classList.remove("hidden");setTimeout(()=>el("mCode").focus(),0);}
-    function closeNewSetup(){el("newSetupModal").classList.add("hidden");}
-    function backdropClose(event){if(event.target===el("newSetupModal"))closeNewSetup();}
-    function clearNewSetup(){["mCode","mDesignation","mClient","mOperation","mMachine","mProgram"].forEach(id=>el(id).value="");}
-
-
-    function openSetup(id){
-      const s=setups.find(x=>x.id===id);
-      if(!s) return;
-      el("eId").value=s.id;
-      el("eCode").value=s.codigo_peca||"";
-      el("eDesignation").value=s.designacao||"";
-      el("eClient").value=s.cliente||"";
-      el("eOperation").value=s.operacao||"";
-      el("eMachine").value=s.maquina||"";
-      el("eProgram").value=s.programa_cnc||"";
-      setEditMsg("");
-      el("editSetupModal").classList.remove("hidden");
-    }
-
-    function closeEditSetup(){
-      el("editSetupModal").classList.add("hidden");
-    }
-
-    function editBackdropClose(event){
-      if(event.target===el("editSetupModal")) closeEditSetup();
-    }
-
-    async function saveSetup(event){
-      event.preventDefault();
-
-      const btn=el("saveBtn");
-      const id=el("eId").value;
-      const code=el("eCode").value.trim();
-      const designation=el("eDesignation").value.trim();
-      const client=el("eClient").value.trim();
-      const operation=el("eOperation").value.trim();
-      const machine=el("eMachine").value.trim();
-      const program=el("eProgram").value.trim();
-
-      setEditMsg("");
-
-      if(code && !/^\d{8}$/.test(code)){
-        setEditMsg("O código interno da peça deve ter exatamente 8 dígitos.","error");
-        return false;
-      }
-
-      if(!designation||!operation||!machine){
-        setEditMsg("Designação, Operação e Máquina são obrigatórios.","error");
-        return false;
-      }
-
-      btn.disabled=true;
-      btn.textContent="A guardar...";
-      setEditMsg("A gravar alterações no Supabase...");
-
-      try{
-        const payload={
-          codigo_peca:code||null,
-          designacao:designation,
-          cliente:client||null,
-          operacao:operation,
-          maquina:machine,
-          programa_cnc:program||null,
-          updated_at:new Date().toISOString()
-        };
-
-        const {data,error}=await sb
-          .from("setups")
-          .update(payload)
-          .eq("id",id)
-          .select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at")
-          .single();
-
-        if(error) throw error;
-
-        const i=setups.findIndex(x=>x.id===id);
-        if(i>=0) setups[i]=data;
-
-        renderSetups();
-        setStatus("Setup atualizado com sucesso.");
-        setEditMsg("Alterações guardadas.","ok");
-
-        setTimeout(()=>closeEditSetup(),400);
-      }catch(err){
-        console.error("Erro ao guardar setup:",err);
-        setEditMsg("Erro ao guardar: "+(err?.message||err),"error");
-      }finally{
-        btn.disabled=false;
-        btn.textContent="Guardar alterações";
-      }
-
-      return false;
-    }
-
-    async function createSetup(event){
-      event.preventDefault();
-      const btn=el("createBtn");
-      const code=el("mCode").value.trim(),designation=el("mDesignation").value.trim(),client=el("mClient").value.trim(),operation=el("mOperation").value.trim(),machine=el("mMachine").value.trim(),program=el("mProgram").value.trim();
-      setCreateMsg("");
-      if(code&&!/^\d{8}$/.test(code)){setCreateMsg("O código interno da peça deve ter exatamente 8 dígitos.","error");return false;}
-      if(!designation||!operation||!machine){setCreateMsg("Designação, Operação e Máquina são obrigatórios.","error");return false;}
-      btn.disabled=true;btn.textContent="A criar...";setCreateMsg("A gravar no Supabase...");
-      try{
-        const {data:sessionData,error:sessionError}=await sb.auth.getSession();
-        if(sessionError) throw sessionError;
-        if(!sessionData?.session) throw new Error("Sessão terminada. Entre novamente.");
-        const payload={codigo_peca:code||null,designacao:designation,cliente:client||null,operacao:operation,maquina:machine,programa_cnc:program||null,estado:"Ativo"};
-        const {data,error}=await sb.from("setups").insert([payload]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
-        if(error) throw error;
-        if(!data?.id) throw new Error("O Supabase não devolveu o ID do novo setup.");
-        setups.unshift(data);renderSetups();setCreateMsg("Setup criado com sucesso.","ok");setStatus("Setup criado com sucesso no Supabase.");
-        setTimeout(()=>{closeNewSetup();clearNewSetup();setCreateMsg("");openSetup(data.id);},350);
-      }catch(err){console.error("Erro ao criar setup:",err);setCreateMsg("Erro ao criar setup: "+(err?.message||err),"error");}
-      finally{btn.disabled=false;btn.textContent="Criar setup";}
-      return false;
-    }
-
-    function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));}
-    document.addEventListener("keydown",event=>{if(event.key==="Escape"){if(!el("newSetupModal").classList.contains("hidden"))closeNewSetup();if(!el("editSetupModal").classList.contains("hidden"))closeEditSetup();}});
-    window.login=login;window.logout=logout;window.openNewSetup=openNewSetup;window.closeNewSetup=closeNewSetup;window.backdropClose=backdropClose;window.createSetup=createSetup;window.renderSetups=renderSetups;window.openSetup=openSetup;window.closeEditSetup=closeEditSetup;window.editBackdropClose=editBackdropClose;window.saveSetup=saveSetup;window.showView=showView;window.renderPlanningParts=renderPlanningParts;window.syncNewPartFromCode=syncNewPartFromCode;window.syncEditPartFromCode=syncEditPartFromCode;
-    boot();
-  </script>
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupModal","supportModal","originModal"].forEach(id=>closeModal(id))});
+boot();
+</script>
 </body>
 </html>
