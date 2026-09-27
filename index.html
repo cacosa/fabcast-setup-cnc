@@ -58,7 +58,7 @@
     .image-placeholder{width:74px;height:60px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;background:#f8fafc;color:var(--muted);font-size:11px}
     .support-thumb{width:74px;height:60px;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#fff}
     .hint{font-size:12px;color:var(--muted)}.warning{color:var(--amber)}
-    .setup-detail-card{width:min(980px,100%);max-height:94vh}
+    .setup-detail-card{width:min(1180px,96vw);max-height:94vh}
     .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
     .detail-item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fafbfc}
     .detail-item small{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
@@ -70,6 +70,11 @@
     .accordion-body{padding:0 14px 14px}
     .accordion-body .table-wrap{margin-top:12px}
     .section-empty{padding:20px 8px;text-align:center;color:var(--muted);font-size:13px}
+    .section-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px}
+    .setup-context{font-size:12px;color:var(--muted)}
+    .table .row-actions{white-space:nowrap;text-align:right}
+    .btn-small{padding:6px 9px;border-radius:8px;font-size:12px}
+
 
     @media(max-width:850px){
       .app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.user-email{display:none}
@@ -81,7 +86,7 @@
 <section id="loginView" class="login-screen">
   <form class="login-card" onsubmit="login(event)">
     <div class="brand">FABCAST</div>
-    <div class="subtitle">Setup CNC · V2.1</div>
+    <div class="subtitle">Setup CNC · V2.2</div>
     <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
     <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
     <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
@@ -98,7 +103,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.1 · FICHA SETUP</div>
+      <div class="version">V2.2 · FERRAMENTAS/ORIGENS</div>
     </div>
   </aside>
 
@@ -195,6 +200,10 @@
         <span id="toolsSign" class="accordion-sign">+</span>
       </button>
       <div id="toolsAccordionBody" class="accordion-body hidden">
+        <div class="section-toolbar">
+          <div id="toolsContext" class="setup-context"></div>
+          <button type="button" class="btn btn-primary btn-small" onclick="openToolEditor()">+ Adicionar ferramenta</button>
+        </div>
         <div class="table-wrap">
           <table class="table">
             <thead>
@@ -206,6 +215,7 @@
                 <th>Ø</th>
                 <th>Comp. ferramenta</th>
                 <th>Comp. alonga</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="detailToolsBody"></tbody>
@@ -220,6 +230,10 @@
         <span id="originsSign" class="accordion-sign">+</span>
       </button>
       <div id="originsAccordionBody" class="accordion-body hidden">
+        <div class="section-toolbar">
+          <div id="originsContext" class="setup-context"></div>
+          <button type="button" class="btn btn-primary btn-small" onclick="openOriginEntryEditor()">+ Adicionar origem</button>
+        </div>
         <div class="table-wrap">
           <table class="table">
             <thead>
@@ -232,6 +246,7 @@
                 <th>B</th>
                 <th>C</th>
                 <th>Notas</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="detailOriginsBody"></tbody>
@@ -240,6 +255,57 @@
       </div>
     </div>
   </div>
+</section>
+
+<!-- FERRAMENTA DO SETUP -->
+<section id="toolEditorModal" class="modal hidden" onclick="if(event.target===this)closeModal('toolEditorModal')">
+  <form class="modal-card" onsubmit="saveToolEntry(event)">
+    <div class="modal-head"><h2 id="toolEditorTitle">Adicionar ferramenta</h2><button type="button" class="btn btn-secondary" onclick="closeModal('toolEditorModal')">Fechar</button></div>
+    <input id="toolId" type="hidden">
+    <div id="toolEditorContext" class="statusbar"></div>
+    <div class="form-grid">
+      <div class="field"><label>Posição T</label><input id="toolT" placeholder="Ex.: T1"></div>
+      <div class="field"><label>Tipo</label><input id="toolType" placeholder="Ex.: Fresa, broca, macho..."></div>
+      <div class="field"><label>Código interno</label><input id="toolInternalCode" maxlength="8" inputmode="numeric" placeholder="5xxxxxxx"></div>
+      <div class="field"><label>Suporte</label><select id="toolSupport"></select></div>
+      <div class="field"><label>Diâmetro (mm)</label><input id="toolDiameter" type="number" step="0.001"></div>
+      <div class="field"><label>Comprimento ferramenta (mm)</label><input id="toolLength" type="number" step="0.001"></div>
+      <div class="field"><label>Comprimento alonga (mm)</label><input id="toolExtension" type="number" step="0.001"></div>
+    </div>
+    <div id="toolEditorMsg" class="msg"></div>
+    <div class="modal-actions">
+      <button id="deleteToolBtn" type="button" class="btn btn-danger hidden" onclick="deleteToolEntry()">Eliminar</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn btn-secondary" onclick="closeModal('toolEditorModal')">Cancelar</button>
+      <button id="saveToolBtn" class="btn btn-primary">Guardar ferramenta</button>
+    </div>
+  </form>
+</section>
+
+<!-- ORIGEM DO SETUP -->
+<section id="originEntryModal" class="modal hidden" onclick="if(event.target===this)closeModal('originEntryModal')">
+  <form class="modal-card" onsubmit="saveOriginEntry(event)">
+    <div class="modal-head"><h2 id="originEntryTitle">Adicionar origem</h2><button type="button" class="btn btn-secondary" onclick="closeModal('originEntryModal')">Fechar</button></div>
+    <input id="originEntryId" type="hidden">
+    <div id="originEntryContext" class="statusbar"></div>
+    <div class="form-grid">
+      <div class="field"><label>Tipo de origem *</label><select id="originEntryCode" required></select></div>
+      <div class="field"><label>X</label><input id="originX" type="number" step="0.001"></div>
+      <div class="field"><label>Y</label><input id="originY" type="number" step="0.001"></div>
+      <div class="field"><label>Z</label><input id="originZ" type="number" step="0.001"></div>
+      <div class="field"><label>A</label><input id="originA" type="number" step="0.001"></div>
+      <div class="field"><label>B</label><input id="originB" type="number" step="0.001"></div>
+      <div class="field"><label>C</label><input id="originC" type="number" step="0.001"></div>
+      <div class="field full"><label>Notas</label><input id="originNotes"></div>
+    </div>
+    <div id="originEntryMsg" class="msg"></div>
+    <div class="modal-actions">
+      <button id="deleteOriginEntryBtn" type="button" class="btn btn-danger hidden" onclick="deleteOriginEntry()">Eliminar</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn btn-secondary" onclick="closeModal('originEntryModal')">Cancelar</button>
+      <button id="saveOriginEntryBtn" class="btn btn-primary">Guardar origem</button>
+    </div>
+  </form>
 </section>
 
 <!-- SETUP -->
@@ -410,6 +476,10 @@ async function openSetup(id){
   $("dMachine").textContent=s.maquina||"—";
   $("dProgram").textContent=s.programa_cnc||"—";
   $("detailSubtitle").textContent=[s.codigo_peca,s.designacao,s.operacao,s.maquina].filter(Boolean).join(" · ");
+  const contextText=`Programa ${s.programa_cnc||"—"} · ${s.operacao||"—"} · ${s.maquina||"—"}`;
+  $("toolsContext").textContent=contextText;
+  $("originsContext").textContent=contextText;
+
 
   collapseAccordion("tools");
   collapseAccordion("origins");
@@ -445,8 +515,8 @@ async function loadSetupDetail(id){
   }catch(e){
     console.error(e);
     currentSetupTools=[];currentSetupOrigins=[];
-    $("detailToolsBody").innerHTML=`<tr><td colspan="7" class="section-empty">Erro ao carregar ferramentas: ${esc(e?.message||e)}</td></tr>`;
-    $("detailOriginsBody").innerHTML=`<tr><td colspan="8" class="section-empty">Erro ao carregar origens: ${esc(e?.message||e)}</td></tr>`;
+    $("detailToolsBody").innerHTML=`<tr><td colspan="8" class="section-empty">Erro ao carregar ferramentas: ${esc(e?.message||e)}</td></tr>`;
+    $("detailOriginsBody").innerHTML=`<tr><td colspan="9" class="section-empty">Erro ao carregar origens: ${esc(e?.message||e)}</td></tr>`;
   }
 }
 
@@ -461,8 +531,9 @@ function renderSetupTools(){
         <td>${esc(t.diametro??"—")}</td>
         <td>${esc(t.comp_ferramenta??"—")}</td>
         <td>${esc(t.comp_alonga??"—")}</td>
+        <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openToolEditor('${t.id}')">Editar</button></td>
       </tr>`).join("")
-    :'<tr><td colspan="7" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
+    :'<tr><td colspan="8" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
 }
 
 function renderSetupOrigins(){
@@ -477,8 +548,9 @@ function renderSetupOrigins(){
         <td>${esc(o.b??"—")}</td>
         <td>${esc(o.c??"—")}</td>
         <td>${esc(o.notas||"—")}</td>
+        <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openOriginEntryEditor('${o.id}')">Editar</button></td>
       </tr>`).join("")
-    :'<tr><td colspan="8" class="section-empty">Ainda não existem origens neste setup.</td></tr>';
+    :'<tr><td colspan="9" class="section-empty">Ainda não existem origens neste setup.</td></tr>';
 }
 
 function toggleAccordion(which){
@@ -508,6 +580,131 @@ function editCurrentSetup(){
   setMsg("setupMsg","");
   $("setupDetailModal").classList.add("hidden");
   $("setupModal").classList.remove("hidden");
+}
+
+
+function currentSetup(){
+  return setups.find(x=>x.id===currentSetupId)||null;
+}
+function setupContextText(){
+  const s=currentSetup();
+  return s?`Programa ${s.programa_cnc||"—"} · ${s.operacao||"—"} · ${s.maquina||"—"}`:"";
+}
+function fillToolSupportOptions(selected=""){
+  const rows=supports.filter(s=>s.ativo!==false);
+  $("toolSupport").innerHTML='<option value="">— Selecionar —</option>'+rows.map(s=>`<option value="${esc(s.tipo)}">${esc(s.tipo)}${s.designacao?` — ${esc(s.designacao)}`:""}</option>`).join("");
+  $("toolSupport").value=selected||"";
+}
+function openToolEditor(id=""){
+  const t=currentSetupTools.find(x=>x.id===id);
+  $("toolId").value=t?.id||"";
+  $("toolT").value=t?.posicao_t||"";
+  $("toolType").value=t?.tipo||"";
+  $("toolInternalCode").value=t?.codigo_interno||"";
+  fillToolSupportOptions(t?.suporte||"");
+  $("toolDiameter").value=t?.diametro??"";
+  $("toolLength").value=t?.comp_ferramenta??"";
+  $("toolExtension").value=t?.comp_alonga??"";
+  $("toolEditorTitle").textContent=t?"Editar ferramenta":"Adicionar ferramenta";
+  $("toolEditorContext").textContent=setupContextText();
+  $("deleteToolBtn").classList.toggle("hidden",!t);
+  setMsg("toolEditorMsg","");
+  $("toolEditorModal").classList.remove("hidden");
+}
+function numOrNull(v){
+  const s=String(v??"").trim();
+  if(s==="")return null;
+  const n=Number(s);return Number.isFinite(n)?n:null;
+}
+async function saveToolEntry(ev){
+  ev.preventDefault();
+  const s=currentSetup();if(!s){setMsg("toolEditorMsg","Setup inválido.","error");return false}
+  const id=$("toolId").value,code=$("toolInternalCode").value.trim(),b=$("saveToolBtn");
+  if(code&&!/^5\d{7}$/.test(code)){setMsg("toolEditorMsg","O código interno da ferramenta deve ter 8 dígitos e começar por 5.","error");return false}
+  b.disabled=true;b.textContent="A guardar...";
+  try{
+    const payload={
+      setup_id:s.id,
+      posicao_t:$("toolT").value.trim()||null,
+      tipo:$("toolType").value.trim()||null,
+      codigo_interno:code||null,
+      suporte:$("toolSupport").value||null,
+      diametro:numOrNull($("toolDiameter").value),
+      comp_ferramenta:numOrNull($("toolLength").value),
+      comp_alonga:numOrNull($("toolExtension").value),
+      ordem:id?(currentSetupTools.find(x=>x.id===id)?.ordem||0):currentSetupTools.length
+    };
+    const res=id?await sb.from("setup_ferramentas").update(payload).eq("id",id):await sb.from("setup_ferramentas").insert([payload]);
+    if(res.error)throw res.error;
+    await loadSetupDetail(s.id);
+    closeModal("toolEditorModal");
+    if($("toolsAccordionBody").classList.contains("hidden"))toggleAccordion("tools");
+  }catch(e){console.error(e);setMsg("toolEditorMsg","Erro ao guardar ferramenta: "+(e?.message||e),"error")}
+  finally{b.disabled=false;b.textContent="Guardar ferramenta"}
+  return false;
+}
+async function deleteToolEntry(){
+  const id=$("toolId").value,s=currentSetup();if(!id||!s)return;
+  if(!confirm("Eliminar esta ferramenta do setup?"))return;
+  const {error}=await sb.from("setup_ferramentas").delete().eq("id",id);
+  if(error){setMsg("toolEditorMsg","Erro ao eliminar: "+error.message,"error");return}
+  await loadSetupDetail(s.id);closeModal("toolEditorModal");
+  if($("toolsAccordionBody").classList.contains("hidden"))toggleAccordion("tools");
+}
+
+function fillOriginTypeOptions(selected=""){
+  const rows=originTypes.filter(o=>o.ativo!==false);
+  $("originEntryCode").innerHTML='<option value="">— Selecionar —</option>'+rows.map(o=>`<option value="${esc(o.codigo)}">${esc(o.codigo)}${o.descricao?` — ${esc(o.descricao)}`:""}</option>`).join("");
+  $("originEntryCode").value=selected||"";
+}
+function openOriginEntryEditor(id=""){
+  const o=currentSetupOrigins.find(x=>x.id===id);
+  $("originEntryId").value=o?.id||"";
+  fillOriginTypeOptions(o?.origem||"");
+  $("originX").value=o?.x??"";
+  $("originY").value=o?.y??"";
+  $("originZ").value=o?.z??"";
+  $("originA").value=o?.a??"";
+  $("originB").value=o?.b??"";
+  $("originC").value=o?.c??"";
+  $("originNotes").value=o?.notas||"";
+  $("originEntryTitle").textContent=o?"Editar origem":"Adicionar origem";
+  $("originEntryContext").textContent=setupContextText();
+  $("deleteOriginEntryBtn").classList.toggle("hidden",!o);
+  setMsg("originEntryMsg","");
+  $("originEntryModal").classList.remove("hidden");
+}
+async function saveOriginEntry(ev){
+  ev.preventDefault();
+  const s=currentSetup();if(!s){setMsg("originEntryMsg","Setup inválido.","error");return false}
+  const id=$("originEntryId").value,codigo=$("originEntryCode").value,b=$("saveOriginEntryBtn");
+  if(!codigo){setMsg("originEntryMsg","Selecione o tipo de origem.","error");return false}
+  b.disabled=true;b.textContent="A guardar...";
+  try{
+    const payload={
+      setup_id:s.id,
+      origem:codigo,
+      x:numOrNull($("originX").value),y:numOrNull($("originY").value),z:numOrNull($("originZ").value),
+      a:numOrNull($("originA").value),b:numOrNull($("originB").value),c:numOrNull($("originC").value),
+      notas:$("originNotes").value.trim()||null,
+      ordem:id?(currentSetupOrigins.find(x=>x.id===id)?.ordem||0):currentSetupOrigins.length
+    };
+    const res=id?await sb.from("setup_origens").update(payload).eq("id",id):await sb.from("setup_origens").insert([payload]);
+    if(res.error)throw res.error;
+    await loadSetupDetail(s.id);
+    closeModal("originEntryModal");
+    if($("originsAccordionBody").classList.contains("hidden"))toggleAccordion("origins");
+  }catch(e){console.error(e);setMsg("originEntryMsg","Erro ao guardar origem: "+(e?.message||e),"error")}
+  finally{b.disabled=false;b.textContent="Guardar origem"}
+  return false;
+}
+async function deleteOriginEntry(){
+  const id=$("originEntryId").value,s=currentSetup();if(!id||!s)return;
+  if(!confirm("Eliminar esta origem do setup?"))return;
+  const {error}=await sb.from("setup_origens").delete().eq("id",id);
+  if(error){setMsg("originEntryMsg","Erro ao eliminar: "+error.message,"error");return}
+  await loadSetupDetail(s.id);closeModal("originEntryModal");
+  if($("originsAccordionBody").classList.contains("hidden"))toggleAccordion("origins");
 }
 
 function syncPart(){const p=parts.find(x=>x.code===$("sCode").value.trim());if(p)$("sDesignation").value=p.desc}
@@ -648,10 +845,16 @@ async function saveOrigin(ev){
   finally{b.disabled=false;b.textContent="Guardar"}return false
 }
 
-document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal","setupModal","supportModal","originModal"].forEach(id=>closeModal(id))});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal","toolEditorModal","originEntryModal","setupModal","supportModal","originModal"].forEach(id=>closeModal(id))});
 window.openSetup=openSetup;
 window.editCurrentSetup=editCurrentSetup;
 window.toggleAccordion=toggleAccordion;
+window.openToolEditor=openToolEditor;
+window.saveToolEntry=saveToolEntry;
+window.deleteToolEntry=deleteToolEntry;
+window.openOriginEntryEditor=openOriginEntryEditor;
+window.saveOriginEntry=saveOriginEntry;
+window.deleteOriginEntry=deleteOriginEntry;
 boot();
 </script>
 </body>
