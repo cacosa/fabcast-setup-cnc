@@ -46,7 +46,7 @@
     .strong{font-weight:900}.muted{color:var(--muted);font-size:13px}.badge{font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;background:#eaf7f1;color:var(--green)}
     .badge.off{background:#f1f3f6;color:#687386}.empty{text-align:center;color:var(--muted);padding:40px 10px}
     .table{width:100%;border-collapse:collapse}.table th,.table td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
-    .table th{font-size:12px;color:var(--muted);background:#fafbfc}.table tr:last-child td{border-bottom:0}
+    .table th{font-size:14px;color:var(--text);font-weight:900;background:#fafbfc}.table tr:last-child td{border-bottom:0}
     .code{font-weight:900;color:var(--blue)}.actions{display:flex;gap:8px;justify-content:flex-end}
     .modal{position:fixed;inset:0;background:rgba(15,23,42,.52);display:grid;place-items:center;z-index:100;padding:20px}
     .modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.25);padding:20px}
@@ -58,7 +58,7 @@
     .image-placeholder{width:74px;height:60px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;background:#f8fafc;color:var(--muted);font-size:11px}
     .support-thumb{width:74px;height:60px;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#fff}
     .hint{font-size:12px;color:var(--muted)}.warning{color:var(--amber)}
-    .setup-detail-card{width:min(1180px,96vw);max-height:94vh}
+    .setup-detail-card{width:min(1380px,98vw);max-height:94vh}
     .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
     .detail-item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fafbfc}
     .detail-item small{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
@@ -74,6 +74,10 @@
     .setup-context{font-size:12px;color:var(--muted)}
     .table .row-actions{white-space:nowrap;text-align:right}
     .btn-small{padding:6px 9px;border-radius:8px;font-size:12px}
+    #toolsAccordionBody .table{min-width:1120px}
+    #originsAccordionBody .table{min-width:1080px}
+    .section-toolbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
 
 
     @media(max-width:850px){
@@ -86,7 +90,7 @@
 <section id="loginView" class="login-screen">
   <form class="login-card" onsubmit="login(event)">
     <div class="brand">FABCAST</div>
-    <div class="subtitle">Setup CNC · V2.2</div>
+    <div class="subtitle">Setup CNC · V2.3</div>
     <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
     <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
     <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
@@ -103,7 +107,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.2 · FERRAMENTAS/ORIGENS</div>
+      <div class="version">V2.3 · TABELAS AMPLAS</div>
     </div>
   </aside>
 
@@ -202,7 +206,10 @@
       <div id="toolsAccordionBody" class="accordion-body hidden">
         <div class="section-toolbar">
           <div id="toolsContext" class="setup-context"></div>
-          <button type="button" class="btn btn-primary btn-small" onclick="openToolEditor()">+ Adicionar ferramenta</button>
+          <div class="section-toolbar-actions">
+            <button type="button" class="btn btn-secondary btn-small" onclick="goToSupports()">⚙ Gerir suportes</button>
+            <button type="button" class="btn btn-primary btn-small" onclick="openToolEditor()">+ Adicionar ferramenta</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table class="table">
@@ -590,6 +597,11 @@ function setupContextText(){
   const s=currentSetup();
   return s?`Programa ${s.programa_cnc||"—"} · ${s.operacao||"—"} · ${s.maquina||"—"}`:"";
 }
+function goToSupports(){
+  closeModal("setupDetailModal");
+  showView("supports");
+  setTimeout(()=>{ if($("supportsSearch")) $("supportsSearch").focus(); },0);
+}
 function fillToolSupportOptions(selected=""){
   const rows=supports.filter(s=>s.ativo!==false);
   $("toolSupport").innerHTML='<option value="">— Selecionar —</option>'+rows.map(s=>`<option value="${esc(s.tipo)}">${esc(s.tipo)}${s.designacao?` — ${esc(s.designacao)}`:""}</option>`).join("");
@@ -849,6 +861,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal",
 window.openSetup=openSetup;
 window.editCurrentSetup=editCurrentSetup;
 window.toggleAccordion=toggleAccordion;
+window.goToSupports=goToSupports;
 window.openToolEditor=openToolEditor;
 window.saveToolEntry=saveToolEntry;
 window.deleteToolEntry=deleteToolEntry;
