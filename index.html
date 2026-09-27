@@ -15,6 +15,14 @@
     .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800}.btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--line);color:var(--text)}.login-card .btn{width:100%}
     .msg{min-height:20px;margin-top:12px;font-size:13px;color:var(--muted)}.msg.error{color:var(--red)}.msg.ok{color:var(--green)}
     .app-shell{min-height:100vh;display:grid;grid-template-columns:230px 1fr}aside{background:var(--nav);color:#fff;padding:22px 18px;display:flex;flex-direction:column}.side-brand{font-weight:900;font-size:22px;margin-bottom:28px}.nav-item{padding:11px 12px;border-radius:10px;color:#d3dae5;background:#263857;font-weight:700}.version{margin-top:auto;color:#99a5b8;font-size:12px}
+    .nav-button{width:100%;text-align:left;border:0;margin:0 0 7px 0;cursor:pointer}
+    .nav-button.active{background:#2f4770;color:#fff}
+    .parts-head{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:10px 12px;font-size:12px;font-weight:900;color:var(--muted);border-bottom:1px solid var(--line)}
+    .part-row{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:12px;border-bottom:1px solid var(--line);align-items:center}
+    .part-row:last-child{border-bottom:0}
+    .part-code{font-weight:900;color:var(--blue)}
+    .source-note{font-size:13px;color:var(--muted);margin-top:4px}
+
     main{min-width:0}.topbar{min-height:70px;background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;gap:12px;align-items:center}.topbar .title{font-weight:900;font-size:20px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}.user-email{color:var(--muted);font-size:13px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .page{padding:24px;max-width:1200px;margin:0 auto}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.toolbar h1{margin:0;font-size:24px}.search{margin-bottom:16px}.search input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.statusbar{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--muted);font-size:13px;margin-bottom:14px}
     .setup-list{display:grid;gap:10px}.setup-item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.setup-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.setup-code{font-weight:900;font-size:16px}.badge{font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;background:#eaf7f1;color:var(--green)}.setup-name{font-weight:700;margin-top:6px}.setup-meta{color:var(--muted);font-size:13px;margin-top:5px}.empty{text-align:center;color:var(--muted);padding:40px 10px}
@@ -37,20 +45,39 @@
   <section id="appView" class="app-shell hidden">
     <aside>
       <div class="side-brand">FABCAST</div>
-      <div class="nav-item">⚙ Setup CNC</div>
-      <div class="version">V1.1 · ABRIR/EDITAR</div>
+      <button id="navSetups" class="nav-item nav-button active" type="button" onclick="showView('setups')">⚙ Setups CNC</button>
+      <button id="navParts" class="nav-item nav-button" type="button" onclick="showView('parts')">▣ Peças</button>
+      <div class="version">V1.2 · PEÇAS</div>
     </aside>
     <main>
       <header class="topbar">
-        <div class="title">Setup CNC</div>
+        <div id="topPageTitle" class="title">Setup CNC</div>
         <div class="top-actions"><div id="userEmail" class="user-email"></div><button class="btn btn-secondary" type="button" onclick="logout()">Sair</button></div>
       </header>
-      <div class="page">
+      <div id="setupsView" class="page">
         <div class="card">
           <div class="toolbar"><h1>Setups</h1><button class="btn btn-primary" type="button" onclick="openNewSetup()">+ Novo setup</button></div>
           <div class="search"><input id="searchInput" placeholder="Pesquisar por código, designação, cliente, máquina ou programa..." oninput="renderSetups()"></div>
           <div id="statusBar" class="statusbar">A iniciar...</div>
           <div id="setupList" class="setup-list"></div>
+        </div>
+      </div>
+
+      <div id="partsView" class="page hidden">
+        <div class="card">
+          <div class="toolbar">
+            <div>
+              <h1>Peças</h1>
+              <div class="source-note">Código e designação provenientes do Planeamento – Maquinação.</div>
+            </div>
+          </div>
+          <div class="search"><input id="partsSearchInput" placeholder="Pesquisar código ou nome da peça..." oninput="renderPlanningParts()"></div>
+          <div id="partsStatusBar" class="statusbar">A carregar peças...</div>
+          <div id="partsCount" class="source-note" style="margin-bottom:10px"></div>
+          <div class="card" style="padding:0;box-shadow:none">
+            <div class="parts-head"><div>Código</div><div>Designação / nome da peça</div></div>
+            <div id="partsList"></div>
+          </div>
         </div>
       </div>
     </main>
@@ -60,7 +87,7 @@
     <form class="modal-card" onsubmit="createSetup(event)">
       <div class="modal-head"><h2>Novo setup</h2><button class="btn btn-secondary" type="button" onclick="closeNewSetup()">Fechar</button></div>
       <div class="form-grid">
-        <div class="field"><label for="mCode">Código interno peça</label><input id="mCode" maxlength="8" inputmode="numeric" placeholder="Opcional"></div>
+        <div class="field"><label for="mCode">Código interno peça</label><input id="mCode" maxlength="8" inputmode="numeric" list="partsCodeList" placeholder="Opcional" oninput="syncNewPartFromCode()"></div>
         <div class="field"><label for="mDesignation">Designação *</label><input id="mDesignation" required></div>
         <div class="field"><label for="mClient">Cliente</label><input id="mClient"></div>
         <div class="field"><label for="mOperation">Operação *</label><input id="mOperation" placeholder="Ex.: OP10" required></div>
@@ -85,7 +112,7 @@
       <div class="form-grid">
         <div class="field">
           <label for="eCode">Código interno peça</label>
-          <input id="eCode" maxlength="8" inputmode="numeric" placeholder="Opcional">
+          <input id="eCode" maxlength="8" inputmode="numeric" list="partsCodeList" placeholder="Opcional" oninput="syncEditPartFromCode()">
         </div>
 
         <div class="field">
@@ -123,11 +150,23 @@
     </form>
   </section>
 
+  <datalist id="partsCodeList"></datalist>
+
   <script>
     const SUPABASE_URL = "https://sxjvcogannhewhoovdar.supabase.co";
     const SUPABASE_KEY = "sb_publishable_wa3NLkXzs6jbUDkWbPaj3Q_Rt1RTMVx";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const PLANNING_SUPABASE_URL = "https://akblvvmoucnkwzutmwls.supabase.co";
+    const PLANNING_SUPABASE_KEY = "sb_publishable_zSpyuREZ6il9a1OdtHVhlQ_oeRoaJs3";
+    const planningSb = supabase.createClient(
+      PLANNING_SUPABASE_URL,
+      PLANNING_SUPABASE_KEY,
+      {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+    );
+
     let setups = [];
+    let planningParts = [];
     const el = id => document.getElementById(id);
 
     function setLoginMsg(text, type=""){const box=el("loginMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
@@ -135,15 +174,19 @@
     function setEditMsg(text, type=""){const box=el("editMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
     function setStatus(text, error=false){const box=el("statusBar");box.textContent=text||"";box.style.color=error?"#b42318":"#687386";}
     function showLogin(){el("loginView").classList.remove("hidden");el("appView").classList.add("hidden");}
-    function showApp(user){el("loginView").classList.add("hidden");el("appView").classList.remove("hidden");el("userEmail").textContent=user?.email||"";}
+    function showApp(user){
+      el("loginView").classList.add("hidden");
+      el("appView").classList.remove("hidden");
+      el("userEmail").textContent=user?.email||"";
+    }
 
     async function boot(){
       try{
         const {data,error}=await sb.auth.getSession();
         if(error) throw error;
-        if(data?.session?.user){showApp(data.session.user);await loadSetups();}else{showLogin();}
+        if(data?.session?.user){showApp(data.session.user);await Promise.all([loadSetups(),loadPlanningParts()]);}else{showLogin();}
         sb.auth.onAuthStateChange(async(_event,newSession)=>{
-          if(newSession?.user){showApp(newSession.user);await loadSetups();}else{showLogin();}
+          if(newSession?.user){showApp(newSession.user);await Promise.all([loadSetups(),loadPlanningParts()]);}else{showLogin();}
         });
       }catch(err){console.error(err);showLogin();setLoginMsg("Erro ao iniciar: "+(err?.message||err),"error");}
     }
@@ -156,13 +199,115 @@
         const {data,error}=await sb.auth.signInWithPassword({email,password});
         if(error) throw error;
         if(!data?.session?.user) throw new Error("Sessão não criada.");
-        showApp(data.session.user);await loadSetups();
+        showApp(data.session.user);await Promise.all([loadSetups(),loadPlanningParts()]);
       }catch(err){console.error(err);setLoginMsg("Não foi possível entrar: "+(err?.message||err),"error");}
       finally{btn.disabled=false;btn.textContent="Entrar";}
       return false;
     }
 
     async function logout(){await sb.auth.signOut();setups=[];renderSetups();showLogin();}
+
+
+    function showView(view){
+      const setupsActive=view==="setups";
+      el("setupsView").classList.toggle("hidden",!setupsActive);
+      el("partsView").classList.toggle("hidden",setupsActive);
+      el("navSetups").classList.toggle("active",setupsActive);
+      el("navParts").classList.toggle("active",!setupsActive);
+      el("topPageTitle") && (el("topPageTitle").textContent=setupsActive?"Setup CNC":"Peças");
+      if(!setupsActive) renderPlanningParts();
+    }
+
+    async function loadPlanningParts(){
+      const status=el("partsStatusBar");
+      if(status) status.textContent="A carregar peças do Planeamento – Maquinação...";
+
+      try{
+        const {data,error}=await planningSb
+          .from("app_state")
+          .select("data")
+          .eq("id",1)
+          .single();
+
+        if(error) throw error;
+
+        const rawParts=Array.isArray(data?.data?.parts)?data.data.parts:[];
+        planningParts=rawParts
+          .filter(p=>p && (p.code || p.desc))
+          .map(p=>({
+            id:p.id||"",
+            code:String(p.code||"").trim(),
+            desc:String(p.desc||"").trim()
+          }))
+          .sort((a,b)=>a.code.localeCompare(b.code,"pt-PT",{numeric:true}));
+
+        fillPartsDatalist();
+        renderPlanningParts();
+
+        if(status){
+          status.textContent=planningParts.length
+            ? "Ligação ao Planeamento OK."
+            : "Ligação ao Planeamento OK, mas não existem peças registadas.";
+          status.style.color="#687386";
+        }
+      }catch(err){
+        console.error("Erro ao carregar peças do Planeamento:",err);
+        planningParts=[];
+        fillPartsDatalist();
+        renderPlanningParts();
+        if(status){
+          status.textContent="Erro ao ler peças do Planeamento: "+(err?.message||err);
+          status.style.color="#b42318";
+        }
+      }
+    }
+
+    function fillPartsDatalist(){
+      const dl=el("partsCodeList");
+      if(!dl) return;
+      dl.innerHTML=planningParts.map(p=>`<option value="${escapeHtml(p.code)}">${escapeHtml(p.desc)}</option>`).join("");
+    }
+
+    function renderPlanningParts(){
+      const root=el("partsList");
+      if(!root) return;
+
+      const q=(el("partsSearchInput")?.value||"").trim().toLowerCase();
+      const rows=planningParts.filter(p=>
+        !q ||
+        p.code.toLowerCase().includes(q) ||
+        p.desc.toLowerCase().includes(q)
+      );
+
+      el("partsCount").textContent=`${rows.length} peça${rows.length===1?"":"s"}`;
+
+      if(!rows.length){
+        root.innerHTML='<div class="empty">Nenhuma peça encontrada.</div>';
+        return;
+      }
+
+      root.innerHTML=rows.map(p=>`
+        <div class="part-row">
+          <div class="part-code">${escapeHtml(p.code||"—")}</div>
+          <div>${escapeHtml(p.desc||"—")}</div>
+        </div>
+      `).join("");
+    }
+
+    function findPlanningPartByCode(code){
+      const v=String(code||"").trim();
+      return planningParts.find(p=>p.code===v)||null;
+    }
+
+    function syncNewPartFromCode(){
+      const p=findPlanningPartByCode(el("mCode").value);
+      if(p) el("mDesignation").value=p.desc;
+    }
+
+    function syncEditPartFromCode(){
+      const p=findPlanningPartByCode(el("eCode").value);
+      if(p) el("eDesignation").value=p.desc;
+    }
 
     async function loadSetups(){
       setStatus("A carregar setups...");
@@ -183,7 +328,7 @@
       list.innerHTML=finalList.map(s=>`<article class="setup-item" role="button" tabindex="0" onclick="openSetup('${s.id}')" onkeydown="if(event.key==='Enter') openSetup('${s.id}')"><div class="setup-head"><div class="setup-code">${escapeHtml(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${escapeHtml(s.estado||"Ativo")}</span></div><div class="setup-name">${escapeHtml(s.designacao||"")}</div><div class="setup-meta">${escapeHtml(s.cliente||"Sem cliente")} · ${escapeHtml(s.operacao||"")} · ${escapeHtml(s.maquina||"")}${s.programa_cnc?" · Prog. "+escapeHtml(s.programa_cnc):""}</div><div class="setup-meta" style="margin-top:8px;font-weight:700;color:#2457d6">Abrir setup</div></article>`).join("");
     }
 
-    function openNewSetup(){clearNewSetup();setCreateMsg("");el("newSetupModal").classList.remove("hidden");setTimeout(()=>el("mCode").focus(),0);}
+    function openNewSetup(){clearNewSetup();setCreateMsg("");fillPartsDatalist();el("newSetupModal").classList.remove("hidden");setTimeout(()=>el("mCode").focus(),0);}
     function closeNewSetup(){el("newSetupModal").classList.add("hidden");}
     function backdropClose(event){if(event.target===el("newSetupModal"))closeNewSetup();}
     function clearNewSetup(){["mCode","mDesignation","mClient","mOperation","mMachine","mProgram"].forEach(id=>el(id).value="");}
@@ -303,7 +448,7 @@
 
     function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));}
     document.addEventListener("keydown",event=>{if(event.key==="Escape"){if(!el("newSetupModal").classList.contains("hidden"))closeNewSetup();if(!el("editSetupModal").classList.contains("hidden"))closeEditSetup();}});
-    window.login=login;window.logout=logout;window.openNewSetup=openNewSetup;window.closeNewSetup=closeNewSetup;window.backdropClose=backdropClose;window.createSetup=createSetup;window.renderSetups=renderSetups;window.openSetup=openSetup;window.closeEditSetup=closeEditSetup;window.editBackdropClose=editBackdropClose;window.saveSetup=saveSetup;
+    window.login=login;window.logout=logout;window.openNewSetup=openNewSetup;window.closeNewSetup=closeNewSetup;window.backdropClose=backdropClose;window.createSetup=createSetup;window.renderSetups=renderSetups;window.openSetup=openSetup;window.closeEditSetup=closeEditSetup;window.editBackdropClose=editBackdropClose;window.saveSetup=saveSetup;window.showView=showView;window.renderPlanningParts=renderPlanningParts;window.syncNewPartFromCode=syncNewPartFromCode;window.syncEditPartFromCode=syncEditPartFromCode;
     boot();
   </script>
 </body>
