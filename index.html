@@ -58,9 +58,22 @@
     .image-placeholder{width:74px;height:60px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;background:#f8fafc;color:var(--muted);font-size:11px}
     .support-thumb{width:74px;height:60px;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#fff}
     .hint{font-size:12px;color:var(--muted)}.warning{color:var(--amber)}
+    .setup-detail-card{width:min(980px,100%);max-height:94vh}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+    .detail-item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fafbfc}
+    .detail-item small{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+    .detail-item strong{font-size:14px}
+    .accordion{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden;background:#fff}
+    .accordion-head{width:100%;border:0;background:#f8fafc;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:900;color:var(--text)}
+    .accordion-head:hover{background:#f2f5f9}
+    .accordion-sign{font-size:22px;line-height:1;color:var(--blue);width:24px;text-align:center}
+    .accordion-body{padding:0 14px 14px}
+    .accordion-body .table-wrap{margin-top:12px}
+    .section-empty{padding:20px 8px;text-align:center;color:var(--muted);font-size:13px}
+
     @media(max-width:850px){
       .app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.user-email{display:none}
-      .table-wrap{overflow:auto}
+      .table-wrap{overflow:auto}.detail-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -68,7 +81,7 @@
 <section id="loginView" class="login-screen">
   <form class="login-card" onsubmit="login(event)">
     <div class="brand">FABCAST</div>
-    <div class="subtitle">Setup CNC · V2.0</div>
+    <div class="subtitle">Setup CNC · V2.1</div>
     <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
     <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
     <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
@@ -85,7 +98,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.0 · REBUILD</div>
+      <div class="version">V2.1 · FICHA SETUP</div>
     </div>
   </aside>
 
@@ -149,6 +162,84 @@
       </div>
     </div>
   </main>
+</section>
+
+<!-- FICHA DO SETUP -->
+<section id="setupDetailModal" class="modal hidden" onclick="if(event.target===this)closeModal('setupDetailModal')">
+  <div class="modal-card setup-detail-card">
+    <div class="modal-head">
+      <div>
+        <h2>Ficha do Setup</h2>
+        <div id="detailSubtitle" class="sub"></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" onclick="editCurrentSetup()">Editar setup</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('setupDetailModal')">Fechar</button>
+      </div>
+    </div>
+
+    <input id="detailSetupId" type="hidden">
+
+    <div class="detail-grid">
+      <div class="detail-item"><small>Código da peça</small><strong id="dCode">—</strong></div>
+      <div class="detail-item"><small>Designação</small><strong id="dDesignation">—</strong></div>
+      <div class="detail-item"><small>Cliente</small><strong id="dClient">—</strong></div>
+      <div class="detail-item"><small>Operação</small><strong id="dOperation">—</strong></div>
+      <div class="detail-item"><small>Máquina</small><strong id="dMachine">—</strong></div>
+      <div class="detail-item"><small>Programa CNC</small><strong id="dProgram">—</strong></div>
+    </div>
+
+    <div class="accordion">
+      <button id="toolsAccordionBtn" type="button" class="accordion-head" onclick="toggleAccordion('tools')">
+        <span>Ferramentas <span id="toolsCount" class="muted"></span></span>
+        <span id="toolsSign" class="accordion-sign">+</span>
+      </button>
+      <div id="toolsAccordionBody" class="accordion-body hidden">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>T</th>
+                <th>Tipo</th>
+                <th>Código interno</th>
+                <th>Suporte</th>
+                <th>Ø</th>
+                <th>Comp. ferramenta</th>
+                <th>Comp. alonga</th>
+              </tr>
+            </thead>
+            <tbody id="detailToolsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button id="originsAccordionBtn" type="button" class="accordion-head" onclick="toggleAccordion('origins')">
+        <span>Origens <span id="detailOriginsCount" class="muted"></span></span>
+        <span id="originsSign" class="accordion-sign">+</span>
+      </button>
+      <div id="originsAccordionBody" class="accordion-body hidden">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Origem</th>
+                <th>X</th>
+                <th>Y</th>
+                <th>Z</th>
+                <th>A</th>
+                <th>B</th>
+                <th>C</th>
+                <th>Notas</th>
+              </tr>
+            </thead>
+            <tbody id="detailOriginsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- SETUP -->
@@ -231,6 +322,7 @@ const planningSb=supabase.createClient(PLANNING_URL,PLANNING_KEY,{auth:{persistS
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 let setups=[],parts=[],machines=[],supports=[],originTypes=[];
+let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[];
 let supportSelectedFile=null,supportRemoveExisting=false,currentSupportImagePath=null;
 const signedSupportUrls=new Map();
 
@@ -307,11 +399,117 @@ function openNewSetup(){
   ["sId","sCode","sDesignation","sClient","sOperation","sMachine","sProgram"].forEach(id=>$(id).value="");
   $("setupModalTitle").textContent="Novo setup";setMsg("setupMsg","");$("setupModal").classList.remove("hidden")
 }
-function openSetup(id){
+async function openSetup(id){
   const s=setups.find(x=>x.id===id);if(!s)return;
-  $("sId").value=s.id;$("sCode").value=s.codigo_peca||"";$("sDesignation").value=s.designacao||"";$("sClient").value=s.cliente||"";$("sOperation").value=s.operacao||"";$("sMachine").value=s.maquina||"";$("sProgram").value=s.programa_cnc||"";
-  $("setupModalTitle").textContent="Editar setup";setMsg("setupMsg","");$("setupModal").classList.remove("hidden")
+  currentSetupId=id;
+  $("detailSetupId").value=id;
+  $("dCode").textContent=s.codigo_peca||"—";
+  $("dDesignation").textContent=s.designacao||"—";
+  $("dClient").textContent=s.cliente||"—";
+  $("dOperation").textContent=s.operacao||"—";
+  $("dMachine").textContent=s.maquina||"—";
+  $("dProgram").textContent=s.programa_cnc||"—";
+  $("detailSubtitle").textContent=[s.codigo_peca,s.designacao,s.operacao,s.maquina].filter(Boolean).join(" · ");
+
+  collapseAccordion("tools");
+  collapseAccordion("origins");
+  $("toolsCount").textContent="";
+  $("detailOriginsCount").textContent="";
+  $("detailToolsBody").innerHTML='<tr><td colspan="7" class="section-empty">A carregar ferramentas...</td></tr>';
+  $("detailOriginsBody").innerHTML='<tr><td colspan="8" class="section-empty">A carregar origens...</td></tr>';
+
+  $("setupDetailModal").classList.remove("hidden");
+  await loadSetupDetail(id);
 }
+
+async function loadSetupDetail(id){
+  try{
+    const [toolsRes,originsRes]=await Promise.all([
+      sb.from("setup_ferramentas")
+        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro,comp_ferramenta,comp_alonga,ordem")
+        .eq("setup_id",id)
+        .order("ordem")
+        .order("posicao_t"),
+      sb.from("setup_origens")
+        .select("id,origem,x,y,z,a,b,c,notas,ordem")
+        .eq("setup_id",id)
+        .order("ordem")
+        .order("origem")
+    ]);
+    if(toolsRes.error)throw toolsRes.error;
+    if(originsRes.error)throw originsRes.error;
+    currentSetupTools=toolsRes.data||[];
+    currentSetupOrigins=originsRes.data||[];
+    renderSetupTools();
+    renderSetupOrigins();
+  }catch(e){
+    console.error(e);
+    currentSetupTools=[];currentSetupOrigins=[];
+    $("detailToolsBody").innerHTML=`<tr><td colspan="7" class="section-empty">Erro ao carregar ferramentas: ${esc(e?.message||e)}</td></tr>`;
+    $("detailOriginsBody").innerHTML=`<tr><td colspan="8" class="section-empty">Erro ao carregar origens: ${esc(e?.message||e)}</td></tr>`;
+  }
+}
+
+function renderSetupTools(){
+  $("toolsCount").textContent=`(${currentSetupTools.length})`;
+  $("detailToolsBody").innerHTML=currentSetupTools.length
+    ?currentSetupTools.map(t=>`<tr>
+        <td class="code">${esc(t.posicao_t||"—")}</td>
+        <td>${esc(t.tipo||"—")}</td>
+        <td>${esc(t.codigo_interno||"—")}</td>
+        <td>${esc(t.suporte||"—")}</td>
+        <td>${esc(t.diametro??"—")}</td>
+        <td>${esc(t.comp_ferramenta??"—")}</td>
+        <td>${esc(t.comp_alonga??"—")}</td>
+      </tr>`).join("")
+    :'<tr><td colspan="7" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
+}
+
+function renderSetupOrigins(){
+  $("detailOriginsCount").textContent=`(${currentSetupOrigins.length})`;
+  $("detailOriginsBody").innerHTML=currentSetupOrigins.length
+    ?currentSetupOrigins.map(o=>`<tr>
+        <td class="code">${esc(o.origem||"—")}</td>
+        <td>${esc(o.x??"—")}</td>
+        <td>${esc(o.y??"—")}</td>
+        <td>${esc(o.z??"—")}</td>
+        <td>${esc(o.a??"—")}</td>
+        <td>${esc(o.b??"—")}</td>
+        <td>${esc(o.c??"—")}</td>
+        <td>${esc(o.notas||"—")}</td>
+      </tr>`).join("")
+    :'<tr><td colspan="8" class="section-empty">Ainda não existem origens neste setup.</td></tr>';
+}
+
+function toggleAccordion(which){
+  const body=$(which==="tools"?"toolsAccordionBody":"originsAccordionBody");
+  const sign=$(which==="tools"?"toolsSign":"originsSign");
+  const isHidden=body.classList.contains("hidden");
+  body.classList.toggle("hidden",!isHidden);
+  sign.textContent=isHidden?"−":"+";
+}
+
+function collapseAccordion(which){
+  const body=$(which==="tools"?"toolsAccordionBody":"originsAccordionBody");
+  const sign=$(which==="tools"?"toolsSign":"originsSign");
+  body.classList.add("hidden");sign.textContent="+";
+}
+
+function editCurrentSetup(){
+  const s=setups.find(x=>x.id===currentSetupId);if(!s)return;
+  $("sId").value=s.id;
+  $("sCode").value=s.codigo_peca||"";
+  $("sDesignation").value=s.designacao||"";
+  $("sClient").value=s.cliente||"";
+  $("sOperation").value=s.operacao||"";
+  $("sMachine").value=s.maquina||"";
+  $("sProgram").value=s.programa_cnc||"";
+  $("setupModalTitle").textContent="Editar setup";
+  setMsg("setupMsg","");
+  $("setupDetailModal").classList.add("hidden");
+  $("setupModal").classList.remove("hidden");
+}
+
 function syncPart(){const p=parts.find(x=>x.code===$("sCode").value.trim());if(p)$("sDesignation").value=p.desc}
 async function saveSetup(ev){
   ev.preventDefault();const id=$("sId").value,code=$("sCode").value.trim(),designation=$("sDesignation").value.trim(),operation=$("sOperation").value.trim(),machine=$("sMachine").value.trim(),b=$("setupSaveBtn");
@@ -323,7 +521,12 @@ async function saveSetup(ev){
     let res;
     if(id)res=await sb.from("setups").update(payload).eq("id",id).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
     else res=await sb.from("setups").insert([{...payload,estado:"Ativo"}]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
-    if(res.error)throw res.error;await loadSetups();closeModal("setupModal");
+    if(res.error)throw res.error;
+    await loadSetups();
+    closeModal("setupModal");
+    if(id){
+      await openSetup(id);
+    }
   }catch(e){setMsg("setupMsg","Erro ao guardar: "+(e?.message||e),"error")}
   finally{b.disabled=false;b.textContent="Guardar"}return false
 }
@@ -445,7 +648,10 @@ async function saveOrigin(ev){
   finally{b.disabled=false;b.textContent="Guardar"}return false
 }
 
-document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupModal","supportModal","originModal"].forEach(id=>closeModal(id))});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal","setupModal","supportModal","originModal"].forEach(id=>closeModal(id))});
+window.openSetup=openSetup;
+window.editCurrentSetup=editCurrentSetup;
+window.toggleAccordion=toggleAccordion;
 boot();
 </script>
 </body>
