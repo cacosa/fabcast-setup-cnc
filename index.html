@@ -38,7 +38,7 @@
     <aside>
       <div class="side-brand">FABCAST</div>
       <div class="nav-item">⚙ Setup CNC</div>
-      <div class="version">V1.0 CLEAN</div>
+      <div class="version">V1.1 · ABRIR/EDITAR</div>
     </aside>
     <main>
       <header class="topbar">
@@ -72,6 +72,57 @@
     </form>
   </section>
 
+
+  <section id="editSetupModal" class="modal hidden" onclick="editBackdropClose(event)">
+    <form class="modal-card" onsubmit="saveSetup(event)">
+      <div class="modal-head">
+        <h2>Setup</h2>
+        <button class="btn btn-secondary" type="button" onclick="closeEditSetup()">Fechar</button>
+      </div>
+
+      <input id="eId" type="hidden">
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="eCode">Código interno peça</label>
+          <input id="eCode" maxlength="8" inputmode="numeric" placeholder="Opcional">
+        </div>
+
+        <div class="field">
+          <label for="eDesignation">Designação *</label>
+          <input id="eDesignation" required>
+        </div>
+
+        <div class="field">
+          <label for="eClient">Cliente</label>
+          <input id="eClient">
+        </div>
+
+        <div class="field">
+          <label for="eOperation">Operação *</label>
+          <input id="eOperation" required>
+        </div>
+
+        <div class="field">
+          <label for="eMachine">Máquina *</label>
+          <input id="eMachine" required>
+        </div>
+
+        <div class="field">
+          <label for="eProgram">Programa CNC</label>
+          <input id="eProgram">
+        </div>
+      </div>
+
+      <div id="editMsg" class="msg"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" onclick="closeEditSetup()">Cancelar</button>
+        <button id="saveBtn" class="btn btn-primary" type="submit">Guardar alterações</button>
+      </div>
+    </form>
+  </section>
+
   <script>
     const SUPABASE_URL = "https://sxjvcogannhewhoovdar.supabase.co";
     const SUPABASE_KEY = "sb_publishable_wa3NLkXzs6jbUDkWbPaj3Q_Rt1RTMVx";
@@ -81,6 +132,7 @@
 
     function setLoginMsg(text, type=""){const box=el("loginMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
     function setCreateMsg(text, type=""){const box=el("createMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
+    function setEditMsg(text, type=""){const box=el("editMsg");box.textContent=text||"";box.className="msg"+(type?" "+type:"");}
     function setStatus(text, error=false){const box=el("statusBar");box.textContent=text||"";box.style.color=error?"#b42318":"#687386";}
     function showLogin(){el("loginView").classList.remove("hidden");el("appView").classList.add("hidden");}
     function showApp(user){el("loginView").classList.add("hidden");el("appView").classList.remove("hidden");el("userEmail").textContent=user?.email||"";}
@@ -128,13 +180,103 @@
       const filtered=setups.filter(s=>![s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().indexOf(q));
       const finalList=q?setups.filter(s=>[s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().includes(q)):setups;
       if(finalList.length===0){list.innerHTML='<div class="empty">Nenhum setup encontrado.</div>';return;}
-      list.innerHTML=finalList.map(s=>`<article class="setup-item"><div class="setup-head"><div class="setup-code">${escapeHtml(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${escapeHtml(s.estado||"Ativo")}</span></div><div class="setup-name">${escapeHtml(s.designacao||"")}</div><div class="setup-meta">${escapeHtml(s.cliente||"Sem cliente")} · ${escapeHtml(s.operacao||"")} · ${escapeHtml(s.maquina||"")}${s.programa_cnc?" · Prog. "+escapeHtml(s.programa_cnc):""}</div></article>`).join("");
+      list.innerHTML=finalList.map(s=>`<article class="setup-item" role="button" tabindex="0" onclick="openSetup('${s.id}')" onkeydown="if(event.key==='Enter') openSetup('${s.id}')"><div class="setup-head"><div class="setup-code">${escapeHtml(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${escapeHtml(s.estado||"Ativo")}</span></div><div class="setup-name">${escapeHtml(s.designacao||"")}</div><div class="setup-meta">${escapeHtml(s.cliente||"Sem cliente")} · ${escapeHtml(s.operacao||"")} · ${escapeHtml(s.maquina||"")}${s.programa_cnc?" · Prog. "+escapeHtml(s.programa_cnc):""}</div><div class="setup-meta" style="margin-top:8px;font-weight:700;color:#2457d6">Abrir setup</div></article>`).join("");
     }
 
     function openNewSetup(){clearNewSetup();setCreateMsg("");el("newSetupModal").classList.remove("hidden");setTimeout(()=>el("mCode").focus(),0);}
     function closeNewSetup(){el("newSetupModal").classList.add("hidden");}
     function backdropClose(event){if(event.target===el("newSetupModal"))closeNewSetup();}
     function clearNewSetup(){["mCode","mDesignation","mClient","mOperation","mMachine","mProgram"].forEach(id=>el(id).value="");}
+
+
+    function openSetup(id){
+      const s=setups.find(x=>x.id===id);
+      if(!s) return;
+      el("eId").value=s.id;
+      el("eCode").value=s.codigo_peca||"";
+      el("eDesignation").value=s.designacao||"";
+      el("eClient").value=s.cliente||"";
+      el("eOperation").value=s.operacao||"";
+      el("eMachine").value=s.maquina||"";
+      el("eProgram").value=s.programa_cnc||"";
+      setEditMsg("");
+      el("editSetupModal").classList.remove("hidden");
+    }
+
+    function closeEditSetup(){
+      el("editSetupModal").classList.add("hidden");
+    }
+
+    function editBackdropClose(event){
+      if(event.target===el("editSetupModal")) closeEditSetup();
+    }
+
+    async function saveSetup(event){
+      event.preventDefault();
+
+      const btn=el("saveBtn");
+      const id=el("eId").value;
+      const code=el("eCode").value.trim();
+      const designation=el("eDesignation").value.trim();
+      const client=el("eClient").value.trim();
+      const operation=el("eOperation").value.trim();
+      const machine=el("eMachine").value.trim();
+      const program=el("eProgram").value.trim();
+
+      setEditMsg("");
+
+      if(code && !/^\d{8}$/.test(code)){
+        setEditMsg("O código interno da peça deve ter exatamente 8 dígitos.","error");
+        return false;
+      }
+
+      if(!designation||!operation||!machine){
+        setEditMsg("Designação, Operação e Máquina são obrigatórios.","error");
+        return false;
+      }
+
+      btn.disabled=true;
+      btn.textContent="A guardar...";
+      setEditMsg("A gravar alterações no Supabase...");
+
+      try{
+        const payload={
+          codigo_peca:code||null,
+          designacao:designation,
+          cliente:client||null,
+          operacao:operation,
+          maquina:machine,
+          programa_cnc:program||null,
+          updated_at:new Date().toISOString()
+        };
+
+        const {data,error}=await sb
+          .from("setups")
+          .update(payload)
+          .eq("id",id)
+          .select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at")
+          .single();
+
+        if(error) throw error;
+
+        const i=setups.findIndex(x=>x.id===id);
+        if(i>=0) setups[i]=data;
+
+        renderSetups();
+        setStatus("Setup atualizado com sucesso.");
+        setEditMsg("Alterações guardadas.","ok");
+
+        setTimeout(()=>closeEditSetup(),400);
+      }catch(err){
+        console.error("Erro ao guardar setup:",err);
+        setEditMsg("Erro ao guardar: "+(err?.message||err),"error");
+      }finally{
+        btn.disabled=false;
+        btn.textContent="Guardar alterações";
+      }
+
+      return false;
+    }
 
     async function createSetup(event){
       event.preventDefault();
@@ -153,15 +295,15 @@
         if(error) throw error;
         if(!data?.id) throw new Error("O Supabase não devolveu o ID do novo setup.");
         setups.unshift(data);renderSetups();setCreateMsg("Setup criado com sucesso.","ok");setStatus("Setup criado com sucesso no Supabase.");
-        setTimeout(()=>{closeNewSetup();clearNewSetup();setCreateMsg("");},500);
+        setTimeout(()=>{closeNewSetup();clearNewSetup();setCreateMsg("");openSetup(data.id);},350);
       }catch(err){console.error("Erro ao criar setup:",err);setCreateMsg("Erro ao criar setup: "+(err?.message||err),"error");}
       finally{btn.disabled=false;btn.textContent="Criar setup";}
       return false;
     }
 
     function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));}
-    document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!el("newSetupModal").classList.contains("hidden"))closeNewSetup();});
-    window.login=login;window.logout=logout;window.openNewSetup=openNewSetup;window.closeNewSetup=closeNewSetup;window.backdropClose=backdropClose;window.createSetup=createSetup;window.renderSetups=renderSetups;
+    document.addEventListener("keydown",event=>{if(event.key==="Escape"){if(!el("newSetupModal").classList.contains("hidden"))closeNewSetup();if(!el("editSetupModal").classList.contains("hidden"))closeEditSetup();}});
+    window.login=login;window.logout=logout;window.openNewSetup=openNewSetup;window.closeNewSetup=closeNewSetup;window.backdropClose=backdropClose;window.createSetup=createSetup;window.renderSetups=renderSetups;window.openSetup=openSetup;window.closeEditSetup=closeEditSetup;window.editBackdropClose=editBackdropClose;window.saveSetup=saveSetup;
     boot();
   </script>
 </body>
