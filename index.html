@@ -134,7 +134,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.7.1 · COMPRIMENTO MONTAGEM</div>
+      <div class="version">V2.7.2 · CAMPOS EDITÁVEIS</div>
     </div>
   </aside>
 
@@ -346,11 +346,15 @@
       <div class="field"><label>Comprimento útil alonga (mm)</label><input id="toolExtension" type="number" step="0.001" placeholder="Opcional"></div>
       <div class="field">
         <label>Ferramenta de corte</label>
-        <select id="toolCatalogByType" onchange="syncSetupToolFromCatalog(this.value,'type')"></select>
+        <input id="toolCatalogByType" list="toolTypeOptions" placeholder="Escrever ou selecionar..."
+               oninput="syncSetupToolFromCatalog(this.value,'type')">
+        <datalist id="toolTypeOptions"></datalist>
       </div>
       <div class="field">
         <label>Código interno FABCAST</label>
-        <select id="toolCatalogByCode" onchange="syncSetupToolFromCatalog(this.value,'code')"></select>
+        <input id="toolCatalogByCode" list="toolCodeOptions" maxlength="8" inputmode="numeric"
+               placeholder="Escrever ou selecionar..." oninput="syncSetupToolFromCatalog(this.value,'code')">
+        <datalist id="toolCodeOptions"></datalist>
       </div>
       <input id="toolType" type="hidden">
       <input id="toolInternalCode" type="hidden">
@@ -835,12 +839,18 @@ function toolCatalogLabel(t){
 function fillSetupToolCatalogOptions(selectedCatalogId=""){
   const byType=[...catalogTools].sort((a,b)=>(a.tipo||"").localeCompare(b.tipo||"","pt"));
   const byCode=[...catalogTools].sort((a,b)=>(a.codigo_interno||"").localeCompare(b.codigo_interno||""));
-  $("toolCatalogByType").innerHTML='<option value="">— Selecionar ferramenta —</option>'+
-    byType.map(t=>`<option value="${esc(t.id)}">${esc(toolCatalogLabel(t))}</option>`).join("");
-  $("toolCatalogByCode").innerHTML='<option value="">— Selecionar código —</option>'+
-    byCode.map(t=>`<option value="${esc(t.id)}">${esc(t.codigo_interno||"")}${t.tipo?` — ${esc(t.tipo)}`:""}</option>`).join("");
-  $("toolCatalogByType").value=selectedCatalogId||"";
-  $("toolCatalogByCode").value=selectedCatalogId||"";
+
+  $("toolTypeOptions").innerHTML=byType.map(t=>
+    `<option value="${esc(toolCatalogLabel(t))}"></option>`
+  ).join("");
+
+  $("toolCodeOptions").innerHTML=byCode.map(t=>
+    `<option value="${esc(t.codigo_interno||"")}">${esc(t.tipo||"")}</option>`
+  ).join("");
+
+  const selected=catalogTools.find(t=>t.id===selectedCatalogId);
+  $("toolCatalogByType").value=selected?toolCatalogLabel(selected):"";
+  $("toolCatalogByCode").value=selected?.codigo_interno||"";
 }
 function findCatalogToolForSetupEntry(t){
   if(!t)return null;
@@ -848,21 +858,51 @@ function findCatalogToolForSetupEntry(t){
     const byCode=catalogTools.find(x=>x.codigo_interno===t.codigo_interno);
     if(byCode)return byCode;
   }
-  return catalogTools.find(x=>(x.tipo||"")===(t.tipo||"") && (t.diametro==null || Number(x.diametro)===Number(t.diametro)))||null;
+  const sameType=catalogTools.filter(x=>(x.tipo||"").toLowerCase()===(t.tipo||"").toLowerCase());
+  if(sameType.length===1)return sameType[0];
+  return sameType.find(x=>t.diametro!=null && Number(x.diametro)===Number(t.diametro))||null;
 }
-function syncSetupToolFromCatalog(catalogId,source="type"){
-  const t=catalogTools.find(x=>x.id===catalogId);
-  $("toolCatalogByType").value=catalogId||"";
-  $("toolCatalogByCode").value=catalogId||"";
-  if(!t){
-    $("toolType").value="";
-    $("toolInternalCode").value="";
+function findCatalogToolFromTypedValue(raw,source){
+  const v=(raw||"").trim();
+  if(!v)return null;
+
+  if(source==="code"){
+    return catalogTools.find(t=>t.codigo_interno===v)||null;
+  }
+
+  const byLabel=catalogTools.find(t=>toolCatalogLabel(t)===v);
+  if(byLabel)return byLabel;
+
+  const byCode=catalogTools.find(t=>t.codigo_interno===v);
+  if(byCode)return byCode;
+
+  const exactType=catalogTools.filter(t=>(t.tipo||"").toLowerCase()===v.toLowerCase());
+  if(exactType.length===1)return exactType[0];
+
+  return null;
+}
+function syncSetupToolFromCatalog(value,source="type"){
+  const raw=(value||"").trim();
+  const t=findCatalogToolFromTypedValue(raw,source);
+
+  if(t){
+    $("toolCatalogByType").value=toolCatalogLabel(t);
+    $("toolCatalogByCode").value=t.codigo_interno||"";
+    $("toolType").value=t.tipo||"";
+    $("toolInternalCode").value=t.codigo_interno||"";
+    $("toolDiameter").value=t.diametro??"";
+    $("toolLength").value=t.comprimento_util??"";
     return;
   }
-  $("toolType").value=t.tipo||"";
-  $("toolInternalCode").value=t.codigo_interno||"";
-  $("toolDiameter").value=t.diametro??"";
-  $("toolLength").value=t.comprimento_util??"";
+
+  if(source==="type"){
+    $("toolType").value=raw;
+    $("toolInternalCode").value=$("toolCatalogByCode").value.trim();
+  }else{
+    $("toolInternalCode").value=raw;
+    const typed=$("toolCatalogByType").value.trim();
+    $("toolType").value=typed.includes(" — ")?typed.split(" — ")[0].replace(/\s+Ø[\d.,]+$/,""):typed;
+  }
 }
 function openToolEditor(id=""){
   const t=currentSetupTools.find(x=>x.id===id);
@@ -870,6 +910,10 @@ function openToolEditor(id=""){
   $("toolId").value=t?.id||"";
   $("toolT").value=t?.posicao_t||"";
   fillSetupToolCatalogOptions(catalogTool?.id||"");
+  if(!catalogTool){
+    $("toolCatalogByType").value=t?.tipo||"";
+    $("toolCatalogByCode").value=t?.codigo_interno||"";
+  }
   $("toolType").value=t?.tipo||catalogTool?.tipo||"";
   $("toolInternalCode").value=t?.codigo_interno||catalogTool?.codigo_interno||"";
   fillToolSupportOptions(t?.suporte||"");
@@ -892,9 +936,9 @@ function numOrNull(v){
 async function saveToolEntry(ev){
   ev.preventDefault();
   const s=currentSetup();if(!s){setMsg("toolEditorMsg","Setup inválido.","error");return false}
-  const id=$("toolId").value,code=$("toolInternalCode").value.trim(),selectedCatalogId=$("toolCatalogByType").value||$("toolCatalogByCode").value,b=$("saveToolBtn");
+  const id=$("toolId").value,code=$("toolInternalCode").value.trim(),toolText=$("toolType").value.trim(),b=$("saveToolBtn");
   if(code&&!/^5\d{7}$/.test(code)){setMsg("toolEditorMsg","O código interno da ferramenta deve ter 8 dígitos e começar por 5.","error");return false}
-  if(!selectedCatalogId&&!code){setMsg("toolEditorMsg","Selecione a ferramenta de corte ou o código interno FABCAST.","error");return false}
+  if(!toolText&&!code){setMsg("toolEditorMsg","Indique a ferramenta de corte ou o código interno FABCAST.","error");return false}
   b.disabled=true;b.textContent="A guardar...";
   try{
     const payload={
