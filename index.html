@@ -63,14 +63,6 @@
     .detail-item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fafbfc}
     .detail-item small{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
     .detail-item strong{font-size:14px}
-    .setup-summary{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;align-items:stretch;margin-bottom:18px}
-    .setup-summary .detail-grid{margin-bottom:0;align-content:start}
-    .setup-photo-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafbfc;display:flex;flex-direction:column;min-height:220px}
-    .setup-photo-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:8px}
-    .setup-photo-drop{flex:1;display:flex;align-items:center;justify-content:center;min-height:150px}
-    .setup-photo-preview{display:flex;flex-direction:column;gap:9px}
-    .setup-photo-preview img{width:100%;height:230px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
-    .setup-photo-actions{display:flex;gap:8px;flex-wrap:wrap}
     .accordion{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden;background:#fff}
     .accordion-head{width:100%;border:0;background:#f8fafc;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:900;color:var(--text)}
     .accordion-head:hover{background:#f2f5f9}
@@ -93,7 +85,7 @@
 
     @media(max-width:850px){
       .app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.user-email{display:none}
-      .table-wrap{overflow:auto}.detail-grid{grid-template-columns:1fr}.setup-summary{grid-template-columns:1fr}
+      .table-wrap{overflow:auto}.detail-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -115,7 +107,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.4.0 · FOTO DA MONTAGEM</div>
+      <div class="version">V2.3.2 · ACESSO DIRETO</div>
     </div>
   </aside>
 
@@ -196,35 +188,13 @@
 
     <input id="detailSetupId" type="hidden">
 
-    <div class="setup-summary">
-      <div class="detail-grid">
-        <div class="detail-item"><small>Código da peça</small><strong id="dCode">—</strong></div>
-        <div class="detail-item"><small>Designação</small><strong id="dDesignation">—</strong></div>
-        <div class="detail-item"><small>Cliente</small><strong id="dClient">—</strong></div>
-        <div class="detail-item"><small>Operação</small><strong id="dOperation">—</strong></div>
-        <div class="detail-item"><small>Máquina</small><strong id="dMachine">—</strong></div>
-        <div class="detail-item"><small>Programa CNC</small><strong id="dProgram">—</strong></div>
-      </div>
-
-      <div class="setup-photo-card">
-        <div class="setup-photo-title">Fotografia da montagem</div>
-        <div id="setupPhotoDrop" class="dropzone setup-photo-drop" onclick="document.getElementById('setupPhotoFile').click()">
-          <div>
-            <strong>Arraste uma fotografia para aqui</strong>
-            <small>ou clique para selecionar · JPG, PNG ou WEBP · máximo 2 MB</small>
-          </div>
-        </div>
-        <input id="setupPhotoFile" class="hidden" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectSetupPhoto(this.files[0])">
-        <div id="setupPhotoPreviewWrap" class="setup-photo-preview hidden">
-          <img id="setupPhotoPreview" alt="Fotografia da montagem">
-          <div id="setupPhotoPreviewName" class="strong"></div>
-          <div class="setup-photo-actions">
-            <button id="saveSetupPhotoBtn" type="button" class="btn btn-primary hidden" onclick="saveSetupPhoto()">Guardar fotografia</button>
-            <button id="removeSetupPhotoBtn" type="button" class="btn btn-danger hidden" onclick="removeSetupPhoto()">Remover fotografia</button>
-          </div>
-        </div>
-        <div id="setupPhotoMsg" class="msg"></div>
-      </div>
+    <div class="detail-grid">
+      <div class="detail-item"><small>Código da peça</small><strong id="dCode">—</strong></div>
+      <div class="detail-item"><small>Designação</small><strong id="dDesignation">—</strong></div>
+      <div class="detail-item"><small>Cliente</small><strong id="dClient">—</strong></div>
+      <div class="detail-item"><small>Operação</small><strong id="dOperation">—</strong></div>
+      <div class="detail-item"><small>Máquina</small><strong id="dMachine">—</strong></div>
+      <div class="detail-item"><small>Programa CNC</small><strong id="dProgram">—</strong></div>
     </div>
 
     <div class="accordion">
@@ -425,10 +395,8 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 let setups=[],parts=[],machines=[],supports=[],originTypes=[];
 let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[];
-let setupPhotoSelectedFile=null,currentSetupPhotoPath=null;
 let supportSelectedFile=null,supportRemoveExisting=false,currentSupportImagePath=null;
 const signedSupportUrls=new Map();
-const signedSetupUrls=new Map();
 
 function setMsg(id,text,type=""){const x=$(id);if(!x)return;x.textContent=text||"";x.className="msg"+(type?" "+type:"")}
 function setStatus(id,text,error=false){const x=$(id);if(!x)return;x.textContent=text||"";x.style.color=error?"#b42318":"#687386"}
@@ -513,119 +481,10 @@ function showView(view){
 async function loadSetups(){
   setStatus("setupStatus","A carregar setups...");
   try{
-    const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,image_path,updated_at").order("updated_at",{ascending:false});if(error)throw error;
-    setups=data||[];
-    await hydrateSetupUrls();
-    renderSetups();setStatus("setupStatus",`Ligação ao Supabase OK · ${setups.length} setup(s).`);
+    const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").order("updated_at",{ascending:false});if(error)throw error;
+    setups=data||[];renderSetups();setStatus("setupStatus",`Ligação ao Supabase OK · ${setups.length} setup(s).`);
   }catch(e){console.error(e);setups=[];renderSetups();setStatus("setupStatus","Erro ao ler setups: "+(e?.message||e),true)}
 }
-async function hydrateSetupUrls(){
-  signedSetupUrls.clear();
-  await Promise.all(setups.filter(s=>s.image_path).map(async s=>{
-    const {data,error}=await sb.storage.from("setup-montagens").createSignedUrl(s.image_path,3600);
-    if(!error&&data?.signedUrl)signedSetupUrls.set(s.id,data.signedUrl);
-  }));
-}
-function resetSetupPhotoEditor(){
-  setupPhotoSelectedFile=null;
-  currentSetupPhotoPath=null;
-  $("setupPhotoFile").value="";
-  $("setupPhotoPreview").removeAttribute("src");
-  $("setupPhotoPreviewWrap").classList.add("hidden");
-  $("setupPhotoDrop").classList.remove("hidden");
-  $("setupPhotoPreviewName").textContent="";
-  $("saveSetupPhotoBtn").classList.add("hidden");
-  $("removeSetupPhotoBtn").classList.add("hidden");
-  setMsg("setupPhotoMsg","");
-}
-function showCurrentSetupPhoto(s){
-  resetSetupPhotoEditor();
-  currentSetupPhotoPath=s?.image_path||null;
-  const url=signedSetupUrls.get(s?.id);
-  if(url){
-    $("setupPhotoPreview").src=url;
-    $("setupPhotoPreviewName").textContent="Fotografia atual";
-    $("setupPhotoPreviewWrap").classList.remove("hidden");
-    $("setupPhotoDrop").classList.add("hidden");
-    $("removeSetupPhotoBtn").classList.remove("hidden");
-  }
-}
-function selectSetupPhoto(file){
-  if(!file)return;
-  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
-    setMsg("setupPhotoMsg","Formato inválido. Use JPG, PNG ou WEBP.","error");return;
-  }
-  if(file.size>2*1024*1024){
-    setMsg("setupPhotoMsg","A fotografia não pode ultrapassar 2 MB.","error");return;
-  }
-  setupPhotoSelectedFile=file;
-  const url=URL.createObjectURL(file);
-  $("setupPhotoPreview").src=url;
-  $("setupPhotoPreviewName").textContent=file.name;
-  $("setupPhotoPreviewWrap").classList.remove("hidden");
-  $("setupPhotoDrop").classList.add("hidden");
-  $("saveSetupPhotoBtn").classList.remove("hidden");
-  $("removeSetupPhotoBtn").classList.remove("hidden");
-  setMsg("setupPhotoMsg","Fotografia pronta para guardar.");
-}
-async function saveSetupPhoto(){
-  const s=currentSetup();
-  if(!s||!setupPhotoSelectedFile)return;
-  const b=$("saveSetupPhotoBtn");
-  b.disabled=true;b.textContent="A guardar...";
-  setMsg("setupPhotoMsg","A gravar fotografia...");
-  try{
-    let imagePath=currentSetupPhotoPath;
-    if(imagePath)await sb.storage.from("setup-montagens").remove([imagePath]);
-    const path=`${s.id}/${Date.now()}_${safeName(setupPhotoSelectedFile.name)}`;
-    const {error:upErr}=await sb.storage.from("setup-montagens").upload(path,setupPhotoSelectedFile,{upsert:false,contentType:setupPhotoSelectedFile.type});
-    if(upErr)throw upErr;
-    const {error:updateErr}=await sb.from("setups").update({image_path:path,updated_at:new Date().toISOString()}).eq("id",s.id);
-    if(updateErr)throw updateErr;
-    s.image_path=path;
-    currentSetupPhotoPath=path;
-    setupPhotoSelectedFile=null;
-    const {data:signed,error:signedErr}=await sb.storage.from("setup-montagens").createSignedUrl(path,3600);
-    if(!signedErr&&signed?.signedUrl)signedSetupUrls.set(s.id,signed.signedUrl);
-    $("setupPhotoPreview").src=signedSetupUrls.get(s.id)||$("setupPhotoPreview").src;
-    $("setupPhotoPreviewName").textContent="Fotografia atual";
-    $("saveSetupPhotoBtn").classList.add("hidden");
-    $("removeSetupPhotoBtn").classList.remove("hidden");
-    setMsg("setupPhotoMsg","Fotografia guardada.");
-  }catch(e){
-    console.error(e);
-    setMsg("setupPhotoMsg","Erro ao guardar fotografia: "+(e?.message||e),"error");
-  }finally{
-    b.disabled=false;b.textContent="Guardar fotografia";
-  }
-}
-async function removeSetupPhoto(){
-  const s=currentSetup();
-  if(!s)return;
-  if(setupPhotoSelectedFile && !currentSetupPhotoPath){
-    showCurrentSetupPhoto(s);
-    return;
-  }
-  if(!currentSetupPhotoPath){
-    resetSetupPhotoEditor();
-    return;
-  }
-  if(!confirm("Remover a fotografia da montagem deste setup?"))return;
-  setMsg("setupPhotoMsg","A remover...");
-  try{
-    await sb.storage.from("setup-montagens").remove([currentSetupPhotoPath]);
-    const {error}=await sb.from("setups").update({image_path:null,updated_at:new Date().toISOString()}).eq("id",s.id);
-    if(error)throw error;
-    s.image_path=null;
-    signedSetupUrls.delete(s.id);
-    resetSetupPhotoEditor();
-    setMsg("setupPhotoMsg","Fotografia removida.");
-  }catch(e){
-    console.error(e);
-    setMsg("setupPhotoMsg","Erro ao remover fotografia: "+(e?.message||e),"error");
-  }
-}
-
 function renderSetups(){
   const q=($("setupSearch")?.value||"").trim().toLowerCase();
   const rows=setups.filter(s=>!q||[s.codigo_peca,s.designacao,s.cliente,s.operacao,s.maquina,s.programa_cnc].join(" ").toLowerCase().includes(q));
@@ -646,7 +505,6 @@ async function openSetup(id){
   $("dMachine").textContent=s.maquina||"—";
   $("dProgram").textContent=s.programa_cnc||"—";
   $("detailSubtitle").textContent=[s.codigo_peca,s.designacao,s.operacao,s.maquina].filter(Boolean).join(" · ");
-  showCurrentSetupPhoto(s);
   const contextText=`Programa ${s.programa_cnc||"—"} · ${s.operacao||"—"} · ${s.maquina||"—"}`;
   $("toolsContext").textContent=contextText;
   $("originsContext").textContent=contextText;
@@ -892,8 +750,8 @@ async function saveSetup(ev){
   try{
     const payload={codigo_peca:code||null,designacao:designation,cliente:$("sClient").value.trim()||null,operacao:operation,maquina:machine,programa_cnc:$("sProgram").value.trim()||null,updated_at:new Date().toISOString()};
     let res;
-    if(id)res=await sb.from("setups").update(payload).eq("id",id).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,image_path,updated_at").single();
-    else res=await sb.from("setups").insert([{...payload,estado:"Ativo"}]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,image_path,updated_at").single();
+    if(id)res=await sb.from("setups").update(payload).eq("id",id).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
+    else res=await sb.from("setups").insert([{...payload,estado:"Ativo"}]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
     if(res.error)throw res.error;
     await loadSetups();
     closeModal("setupModal");
@@ -994,11 +852,6 @@ const drop=$("supportDrop");
 ["dragenter","dragover"].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault();drop.classList.add("drag")}));
 ["dragleave","drop"].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault();drop.classList.remove("drag")}));
 drop.addEventListener("drop",e=>selectSupportFile(e.dataTransfer.files?.[0]));
-
-const setupPhotoDrop=$("setupPhotoDrop");
-["dragenter","dragover"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.add("drag")}));
-["dragleave","drop"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.remove("drag")}));
-setupPhotoDrop.addEventListener("drop",e=>selectSetupPhoto(e.dataTransfer.files?.[0]));
 
 async function loadOrigins(){
   setStatus("originsStatus","A carregar tipos de origem...");
