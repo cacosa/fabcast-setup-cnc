@@ -96,10 +96,11 @@
     #toolsAccordionBody .table th:nth-child(5),#toolsAccordionBody .table td:nth-child(5){width:230px}
     #toolsAccordionBody .table th:nth-child(6),#toolsAccordionBody .table td:nth-child(6){width:95px}
     #toolsAccordionBody .table th:nth-child(7),#toolsAccordionBody .table td:nth-child(7){width:130px}
-    #toolsAccordionBody .table th:nth-child(8),#toolsAccordionBody .table td:nth-child(8){
+    #toolsAccordionBody .table th:nth-child(8),#toolsAccordionBody .table td:nth-child(8){width:120px}
+    #toolsAccordionBody .table th:nth-child(9),#toolsAccordionBody .table td:nth-child(9){
       width:92px;min-width:92px;max-width:92px;position:sticky;right:0;background:#fff;z-index:2
     }
-    #toolsAccordionBody .table th:nth-child(8){background:#f8fafc;z-index:3}
+    #toolsAccordionBody .table th:nth-child(9){background:#f8fafc;z-index:3}
     .tool-main{font-weight:800}
     .tool-code{display:block;margin-top:3px;font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
@@ -129,10 +130,11 @@
     <button id="navSetups" class="nav-button active" onclick="showView('setups')">⚙ Setups CNC</button>
     <button id="navParts" class="nav-button" onclick="showView('parts')">▣ Peças</button>
     <button id="navMachines" class="nav-button" onclick="showView('machines')">⌘ Máquinas</button>
+    <button id="navTools" class="nav-button" onclick="showView('tools')">🧰 Ferramentas</button>
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.5.0 · TABELA FERRAMENTAS</div>
+      <div class="version">V2.7.1 · COMPRIMENTO MONTAGEM</div>
     </div>
   </aside>
 
@@ -168,6 +170,26 @@
         <div class="search"><input id="machinesSearch" placeholder="Pesquisar máquina, grupo, marca ou modelo..." oninput="renderMachines()"></div>
         <div id="machinesStatus" class="statusbar">A carregar...</div>
         <div class="table-wrap"><table class="table"><thead><tr><th>Máquina</th><th>Grupo</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Estado</th></tr></thead><tbody id="machinesBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="toolsView" class="page hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h1>Ferramentas</h1>
+            <div class="sub">Catálogo de ferramentas de corte. No Portal FABCAST, estes dados serão lidos do catálogo central de ferramentas.</div>
+          </div>
+          <button class="btn btn-primary" onclick="openCatalogTool()">+ Nova ferramenta</button>
+        </div>
+        <div class="search"><input id="toolsSearch" placeholder="Pesquisar tipo de ferramenta ou código interno FABCAST..." oninput="renderCatalogTools()"></div>
+        <div id="toolsStatus" class="statusbar">A carregar...</div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Tipo de ferramenta</th><th>Código interno FABCAST</th><th>Ø (mm)</th><th>Comp. útil</th><th>Comp. total</th><th>Nº cortes</th><th>Observações</th><th></th></tr></thead>
+            <tbody id="toolsBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -268,6 +290,7 @@
                 <th>Ferramenta / Código interno</th>
                 <th>Ø ferramenta</th>
                 <th>Comp. útil ferramenta</th>
+                <th>Comp. montagem</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -321,10 +344,19 @@
       <div class="field"><label>Suporte</label><select id="toolSupport"></select></div>
       <div class="field"><label>Ø Alonga (mm)</label><input id="toolExtensionDiameter" type="number" step="0.001" placeholder="Opcional"></div>
       <div class="field"><label>Comprimento útil alonga (mm)</label><input id="toolExtension" type="number" step="0.001" placeholder="Opcional"></div>
-      <div class="field"><label>Ferramenta</label><input id="toolType" placeholder="Ex.: Broca, fresa, macho..."></div>
-      <div class="field"><label>Código interno</label><input id="toolInternalCode" maxlength="8" inputmode="numeric" placeholder="5xxxxxxx"></div>
+      <div class="field">
+        <label>Ferramenta de corte</label>
+        <select id="toolCatalogByType" onchange="syncSetupToolFromCatalog(this.value,'type')"></select>
+      </div>
+      <div class="field">
+        <label>Código interno FABCAST</label>
+        <select id="toolCatalogByCode" onchange="syncSetupToolFromCatalog(this.value,'code')"></select>
+      </div>
+      <input id="toolType" type="hidden">
+      <input id="toolInternalCode" type="hidden">
       <div class="field"><label>Ø ferramenta (mm)</label><input id="toolDiameter" type="number" step="0.001"></div>
       <div class="field"><label>Comprimento útil ferramenta (mm)</label><input id="toolLength" type="number" step="0.001"></div>
+      <div class="field"><label>Comprimento de montagem (mm)</label><input id="toolAssemblyLength" type="number" step="0.001" placeholder="Projeção efetiva na montagem"></div>
     </div>
     <div id="toolEditorMsg" class="msg"></div>
     <div class="modal-actions">
@@ -378,6 +410,53 @@
     </div>
     <div id="setupMsg" class="msg"></div>
     <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeModal('setupModal')">Cancelar</button><button id="setupSaveBtn" class="btn btn-primary">Guardar</button></div>
+  </form>
+</section>
+
+<!-- CATÁLOGO DE FERRAMENTAS -->
+<section id="catalogToolModal" class="modal hidden" onclick="if(event.target===this)closeModal('catalogToolModal')">
+  <form class="modal-card" onsubmit="saveCatalogTool(event)">
+    <div class="modal-head">
+      <h2 id="catalogToolModalTitle">Nova ferramenta</h2>
+      <button type="button" class="btn btn-secondary" onclick="closeModal('catalogToolModal')">Fechar</button>
+    </div>
+    <input id="catalogToolId" type="hidden">
+    <div class="form-grid">
+      <div class="field">
+        <label>Tipo de ferramenta *</label>
+        <input id="catalogToolType" placeholder="Ex.: Broca, Fresa, Macho..." required>
+      </div>
+      <div class="field">
+        <label>Código interno FABCAST *</label>
+        <input id="catalogToolCode" maxlength="8" inputmode="numeric" placeholder="5xxxxxxx" required>
+      </div>
+      <div class="field">
+        <label>Ø ferramenta (mm)</label>
+        <input id="catalogToolDiameter" type="number" step="0.001">
+      </div>
+      <div class="field">
+        <label>Comprimento útil (mm)</label>
+        <input id="catalogToolUsefulLength" type="number" step="0.001">
+      </div>
+      <div class="field">
+        <label>Comprimento total (mm)</label>
+        <input id="catalogToolTotalLength" type="number" step="0.001">
+      </div>
+      <div class="field">
+        <label>Nº de cortes</label>
+        <input id="catalogToolFlutes" type="number" step="1" min="0">
+      </div>
+      <div class="field full">
+        <label>Observações</label>
+        <textarea id="catalogToolNotes" rows="4" placeholder="Geometria, aplicação, referência, etc."></textarea>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:10px">O código interno FABCAST deve ter 8 dígitos e começar por 5.</div>
+    <div id="catalogToolMsg" class="msg"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('catalogToolModal')">Cancelar</button>
+      <button id="catalogToolSaveBtn" class="btn btn-primary">Guardar ferramenta</button>
+    </div>
   </form>
 </section>
 
@@ -442,7 +521,7 @@ const planningSb=supabase.createClient(PLANNING_URL,PLANNING_KEY,{auth:{persistS
 
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-let setups=[],parts=[],machines=[],supports=[],originTypes=[];
+let setups=[],parts=[],machines=[],catalogTools=[],supports=[],originTypes=[];
 let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[],currentSetupPhoto=null;
 let supportSelectedFile=null,supportRemoveExisting=false,currentSupportImagePath=null;
 const signedSupportUrls=new Map();
@@ -494,7 +573,7 @@ async function boot(){
 }
 
 async function loadAll(){
-  await Promise.all([loadPlanning(),loadSetups(),loadSupports(),loadOrigins()]);
+  await Promise.all([loadPlanning(),loadSetups(),loadCatalogTools(),loadSupports(),loadOrigins()]);
 }
 async function loadPlanning(){
   setStatus("partsStatus","A carregar dados do Planeamento...");
@@ -517,14 +596,16 @@ async function loadPlanning(){
 }
 
 function showView(view){
-  const names=["setups","parts","machines","supports","origins"];
-  const titles={setups:"Setups CNC",parts:"Peças",machines:"Máquinas",supports:"Suportes",origins:"Tipos de Origem"};
+  const names=["setups","parts","machines","tools","supports","origins"];
+  const titles={setups:"Setups CNC",parts:"Peças",machines:"Máquinas",tools:"Ferramentas",supports:"Suportes",origins:"Tipos de Origem"};
   names.forEach(n=>{
     $(n+"View").classList.toggle("hidden",n!==view);
     const nav=$("nav"+n[0].toUpperCase()+n.slice(1));if(nav)nav.classList.toggle("active",n===view);
   });
   $("topTitle").textContent=titles[view]||"FABCAST";
-  if(view==="supports")renderSupports();if(view==="origins")renderOrigins();
+  if(view==="tools")renderCatalogTools();
+  if(view==="supports")renderSupports();
+  if(view==="origins")renderOrigins();
 }
 
 async function loadSetups(){
@@ -640,7 +721,7 @@ async function loadSetupDetail(id){
     await loadSetupPhoto();
     const [toolsRes,originsRes]=await Promise.all([
       sb.from("setup_ferramentas")
-        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro_alonga,diametro,comp_ferramenta,comp_alonga,ordem")
+        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro_alonga,diametro,comp_ferramenta,comp_alonga,comprimento_montagem,ordem")
         .eq("setup_id",id)
         .order("ordem")
         .order("posicao_t"),
@@ -675,9 +756,10 @@ function renderSetupTools(){
         <td><span class="tool-main">${esc(t.tipo||"—")}</span>${t.codigo_interno?`<span class="tool-code">${esc(t.codigo_interno)}</span>`:""}</td>
         <td>${esc(t.diametro??"—")}</td>
         <td>${esc(t.comp_ferramenta??"—")}</td>
+        <td>${esc(t.comprimento_montagem??"—")}</td>
         <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openToolEditor('${t.id}')">Editar</button></td>
       </tr>`).join("")
-    :'<tr><td colspan="8" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
+    :'<tr><td colspan="9" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
 }
 
 function renderSetupOrigins(){
@@ -745,15 +827,55 @@ function fillToolSupportOptions(selected=""){
   $("toolSupport").innerHTML='<option value="">— Selecionar —</option>'+rows.map(s=>`<option value="${esc(s.tipo)}">${esc(s.tipo)}${s.designacao?` — ${esc(s.designacao)}`:""}</option>`).join("");
   $("toolSupport").value=selected||"";
 }
+
+function toolCatalogLabel(t){
+  const geo=t.diametro!=null?` Ø${t.diametro}`:"";
+  return `${t.tipo||"Ferramenta"}${geo} — ${t.codigo_interno||""}`;
+}
+function fillSetupToolCatalogOptions(selectedCatalogId=""){
+  const byType=[...catalogTools].sort((a,b)=>(a.tipo||"").localeCompare(b.tipo||"","pt"));
+  const byCode=[...catalogTools].sort((a,b)=>(a.codigo_interno||"").localeCompare(b.codigo_interno||""));
+  $("toolCatalogByType").innerHTML='<option value="">— Selecionar ferramenta —</option>'+
+    byType.map(t=>`<option value="${esc(t.id)}">${esc(toolCatalogLabel(t))}</option>`).join("");
+  $("toolCatalogByCode").innerHTML='<option value="">— Selecionar código —</option>'+
+    byCode.map(t=>`<option value="${esc(t.id)}">${esc(t.codigo_interno||"")}${t.tipo?` — ${esc(t.tipo)}`:""}</option>`).join("");
+  $("toolCatalogByType").value=selectedCatalogId||"";
+  $("toolCatalogByCode").value=selectedCatalogId||"";
+}
+function findCatalogToolForSetupEntry(t){
+  if(!t)return null;
+  if(t.codigo_interno){
+    const byCode=catalogTools.find(x=>x.codigo_interno===t.codigo_interno);
+    if(byCode)return byCode;
+  }
+  return catalogTools.find(x=>(x.tipo||"")===(t.tipo||"") && (t.diametro==null || Number(x.diametro)===Number(t.diametro)))||null;
+}
+function syncSetupToolFromCatalog(catalogId,source="type"){
+  const t=catalogTools.find(x=>x.id===catalogId);
+  $("toolCatalogByType").value=catalogId||"";
+  $("toolCatalogByCode").value=catalogId||"";
+  if(!t){
+    $("toolType").value="";
+    $("toolInternalCode").value="";
+    return;
+  }
+  $("toolType").value=t.tipo||"";
+  $("toolInternalCode").value=t.codigo_interno||"";
+  $("toolDiameter").value=t.diametro??"";
+  $("toolLength").value=t.comprimento_util??"";
+}
 function openToolEditor(id=""){
   const t=currentSetupTools.find(x=>x.id===id);
+  const catalogTool=findCatalogToolForSetupEntry(t);
   $("toolId").value=t?.id||"";
   $("toolT").value=t?.posicao_t||"";
-  $("toolType").value=t?.tipo||"";
-  $("toolInternalCode").value=t?.codigo_interno||"";
+  fillSetupToolCatalogOptions(catalogTool?.id||"");
+  $("toolType").value=t?.tipo||catalogTool?.tipo||"";
+  $("toolInternalCode").value=t?.codigo_interno||catalogTool?.codigo_interno||"";
   fillToolSupportOptions(t?.suporte||"");
-  $("toolDiameter").value=t?.diametro??"";
-  $("toolLength").value=t?.comp_ferramenta??"";
+  $("toolDiameter").value=t?.diametro??catalogTool?.diametro??"";
+  $("toolLength").value=t?.comp_ferramenta??catalogTool?.comprimento_util??"";
+  $("toolAssemblyLength").value=t?.comprimento_montagem??"";
   $("toolExtensionDiameter").value=t?.diametro_alonga??"";
   $("toolExtension").value=t?.comp_alonga??"";
   $("toolEditorTitle").textContent=t?"Editar montagem de ferramenta":"Adicionar montagem de ferramenta";
@@ -770,8 +892,9 @@ function numOrNull(v){
 async function saveToolEntry(ev){
   ev.preventDefault();
   const s=currentSetup();if(!s){setMsg("toolEditorMsg","Setup inválido.","error");return false}
-  const id=$("toolId").value,code=$("toolInternalCode").value.trim(),b=$("saveToolBtn");
+  const id=$("toolId").value,code=$("toolInternalCode").value.trim(),selectedCatalogId=$("toolCatalogByType").value||$("toolCatalogByCode").value,b=$("saveToolBtn");
   if(code&&!/^5\d{7}$/.test(code)){setMsg("toolEditorMsg","O código interno da ferramenta deve ter 8 dígitos e começar por 5.","error");return false}
+  if(!selectedCatalogId&&!code){setMsg("toolEditorMsg","Selecione a ferramenta de corte ou o código interno FABCAST.","error");return false}
   b.disabled=true;b.textContent="A guardar...";
   try{
     const payload={
@@ -784,6 +907,7 @@ async function saveToolEntry(ev){
       diametro:numOrNull($("toolDiameter").value),
       comp_ferramenta:numOrNull($("toolLength").value),
       comp_alonga:numOrNull($("toolExtension").value),
+      comprimento_montagem:numOrNull($("toolAssemblyLength").value),
       ordem:id?(currentSetupTools.find(x=>x.id===id)?.ordem||0):currentSetupTools.length
     };
     const res=id?await sb.from("setup_ferramentas").update(payload).eq("id",id):await sb.from("setup_ferramentas").insert([payload]);
@@ -887,6 +1011,93 @@ function renderParts(){
 function renderMachines(){
   const q=($("machinesSearch")?.value||"").trim().toLowerCase(),rows=machines.filter(m=>!q||[m.code,m.group,m.type,m.brand,m.model,m.condition].join(" ").toLowerCase().includes(q));
   $("machinesBody").innerHTML=rows.length?rows.map(m=>`<tr><td class="code">${esc(m.code)}</td><td>${esc(m.group||"—")}</td><td>${esc(m.type||"—")}</td><td>${esc(m.brand||"—")}</td><td>${esc(m.model||"—")}</td><td><span class="badge ${m.active?"":"off"}">${esc(m.condition|| (m.active?"Ativa":"Inativa"))}</span></td></tr>`).join(""):'<tr><td colspan="6" class="empty">Nenhuma máquina encontrada.</td></tr>'
+}
+
+
+async function loadCatalogTools(){
+  setStatus("toolsStatus","A carregar ferramentas...");
+  try{
+    const {data,error}=await sb.from("ferramentas").select("id,tipo,codigo_interno,diametro,comprimento_util,comprimento_total,numero_cortes,observacoes,updated_at").order("tipo").order("codigo_interno");
+    if(error)throw error;
+    catalogTools=data||[];
+    renderCatalogTools();
+    setStatus("toolsStatus",`Supabase OK · ${catalogTools.length} ferramenta(s).`);
+  }catch(e){
+    console.error(e);
+    catalogTools=[];
+    renderCatalogTools();
+    setStatus("toolsStatus","Tabela 'ferramentas' ainda não disponível. Execute o SQL da V2.6.0.","error");
+  }
+}
+function renderCatalogTools(){
+  const q=($("toolsSearch")?.value||"").trim().toLowerCase();
+  const rows=catalogTools.filter(t=>!q||[t.tipo,t.codigo_interno,t.observacoes].join(" ").toLowerCase().includes(q));
+  $("toolsBody").innerHTML=rows.length
+    ?rows.map(t=>`<tr>
+      <td><strong>${esc(t.tipo||"—")}</strong></td>
+      <td class="code">${esc(t.codigo_interno||"—")}</td>
+      <td>${esc(t.diametro??"—")}</td>
+      <td>${esc(t.comprimento_util??"—")}</td>
+      <td>${esc(t.comprimento_total??"—")}</td>
+      <td>${esc(t.numero_cortes??"—")}</td>
+      <td>${esc(t.observacoes||"—")}</td>
+      <td class="row-actions"><button class="btn btn-secondary btn-small" onclick="openCatalogTool('${t.id}')">Editar</button></td>
+    </tr>`).join("")
+    :'<tr><td colspan="8" class="empty">Nenhuma ferramenta registada.</td></tr>';
+}
+function openCatalogTool(id=""){
+  const t=catalogTools.find(x=>x.id===id);
+  $("catalogToolId").value=t?.id||"";
+  $("catalogToolType").value=t?.tipo||"";
+  $("catalogToolCode").value=t?.codigo_interno||"";
+  $("catalogToolDiameter").value=t?.diametro??"";
+  $("catalogToolUsefulLength").value=t?.comprimento_util??"";
+  $("catalogToolTotalLength").value=t?.comprimento_total??"";
+  $("catalogToolFlutes").value=t?.numero_cortes??"";
+  $("catalogToolNotes").value=t?.observacoes||"";
+  $("catalogToolModalTitle").textContent=t?"Editar ferramenta":"Nova ferramenta";
+  setMsg("catalogToolMsg","");
+  $("catalogToolModal").classList.remove("hidden");
+}
+async function saveCatalogTool(ev){
+  ev.preventDefault();
+  const id=$("catalogToolId").value;
+  const tipo=$("catalogToolType").value.trim();
+  const codigo=$("catalogToolCode").value.trim();
+  const b=$("catalogToolSaveBtn");
+  if(!tipo){setMsg("catalogToolMsg","Indique o tipo de ferramenta.","error");return false}
+  if(!/^5\d{7}$/.test(codigo)){
+    setMsg("catalogToolMsg","O código interno FABCAST deve ter 8 dígitos e começar por 5.","error");
+    return false;
+  }
+  b.disabled=true;b.textContent="A guardar...";
+  try{
+    const payload={
+      tipo,
+      codigo_interno:codigo,
+      diametro:numOrNull($("catalogToolDiameter").value),
+      comprimento_util:numOrNull($("catalogToolUsefulLength").value),
+      comprimento_total:numOrNull($("catalogToolTotalLength").value),
+      numero_cortes:numOrNull($("catalogToolFlutes").value),
+      observacoes:$("catalogToolNotes").value.trim()||null,
+      updated_at:new Date().toISOString()
+    };
+    const res=id
+      ?await sb.from("ferramentas").update(payload).eq("id",id)
+      :await sb.from("ferramentas").insert([payload]);
+    if(res.error)throw res.error;
+    await loadCatalogTools();
+    closeModal("catalogToolModal");
+  }catch(e){
+    console.error(e);
+    const msg=(e?.code==="23505"||String(e?.message||"").toLowerCase().includes("duplicate"))
+      ?"Esse código interno FABCAST já está registado."
+      :"Erro ao guardar ferramenta: "+(e?.message||e);
+    setMsg("catalogToolMsg",msg,"error");
+  }finally{
+    b.disabled=false;b.textContent="Guardar ferramenta";
+  }
+  return false;
 }
 
 async function loadSupports(){
@@ -997,7 +1208,11 @@ async function saveOrigin(ev){
   finally{b.disabled=false;b.textContent="Guardar"}return false
 }
 
-document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal","toolEditorModal","originEntryModal","setupModal","supportModal","originModal"].forEach(id=>closeModal(id))});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal","toolEditorModal","originEntryModal","setupModal","catalogToolModal","supportModal","originModal"].forEach(id=>closeModal(id))});
+window.syncSetupToolFromCatalog=syncSetupToolFromCatalog;
+window.openCatalogTool=openCatalogTool;
+window.saveCatalogTool=saveCatalogTool;
+window.renderCatalogTools=renderCatalogTools;
 window.openSetup=openSetup;
 window.editCurrentSetup=editCurrentSetup;
 window.toggleAccordion=toggleAccordion;
