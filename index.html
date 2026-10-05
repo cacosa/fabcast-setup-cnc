@@ -58,7 +58,7 @@
     .image-placeholder{width:74px;height:60px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;background:#f8fafc;color:var(--muted);font-size:11px}
     .support-thumb{width:74px;height:60px;object-fit:contain;border:1px solid var(--line);border-radius:9px;background:#fff}
     .hint{font-size:12px;color:var(--muted)}.warning{color:var(--amber)}
-    .setup-detail-card{width:min(1380px,98vw);max-height:94vh}
+    .setup-detail-card{width:min(1170px,96vw);max-height:94vh}
     .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
     .detail-item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fafbfc}
     .detail-item small{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
@@ -73,6 +73,9 @@
     .setup-photo-preview{display:flex;flex-direction:column;gap:9px}
     .setup-photo-preview img{width:100%;height:230px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
     .setup-photo-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .setup-notes-view{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:#fff;padding:12px;min-height:110px}
+    .setup-notes-view small{display:block;color:var(--muted);font-weight:800;margin-bottom:7px}
+    .setup-notes-text{white-space:pre-wrap;line-height:1.45;color:var(--text);min-height:64px}
     .accordion{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden;background:#fff}
     .accordion-head{width:100%;border:0;background:#f8fafc;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:900;color:var(--text)}
     .accordion-head:hover{background:#f2f5f9}
@@ -117,7 +120,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.4.2 · AJUSTE FOTO</div>
+      <div class="version">V2.4.2 · FICHA COMPACTA + NOTAS</div>
     </div>
   </aside>
 
@@ -206,6 +209,10 @@
         <div class="detail-item"><small>Operação</small><strong id="dOperation">—</strong></div>
         <div class="detail-item"><small>Máquina</small><strong id="dMachine">—</strong></div>
         <div class="detail-item"><small>Programa CNC</small><strong id="dProgram">—</strong></div>
+        <div class="setup-notes-view">
+          <small>Notas do Setup</small>
+          <div id="dNotes" class="setup-notes-text">—</div>
+        </div>
       </div>
       <div class="setup-photo-card">
         <div class="setup-photo-title">Fotografia da montagem</div>
@@ -216,9 +223,9 @@
         <div id="setupPhotoPreviewWrap" class="setup-photo-preview hidden">
           <img id="setupPhotoPreview" alt="Fotografia da montagem">
           <div id="setupPhotoName" class="strong"></div>
-          <div class="setup-photo-actions" style="margin-top:-2px">
-            <button id="setupPhotoDeleteBtn" type="button" class="btn btn-danger">Remover</button>
+          <div class="setup-photo-actions">
             <button id="setupPhotoReplaceBtn" type="button" class="btn btn-secondary">Substituir</button>
+            <button id="setupPhotoDeleteBtn" type="button" class="btn btn-danger">Remover</button>
           </div>
         </div>
         <div id="setupPhotoMsg" class="msg"></div>
@@ -354,6 +361,7 @@
       <div class="field"><label>Operação *</label><input id="sOperation" placeholder="Ex.: OP10" required></div>
       <div class="field"><label>Máquina *</label><input id="sMachine" list="machineCodes" required></div>
       <div class="field"><label>Programa CNC</label><input id="sProgram"></div>
+      <div class="field full"><label>Notas do Setup</label><textarea id="sNotes" rows="5" placeholder="Notas de montagem, preparação, cuidados especiais..."></textarea></div>
     </div>
     <div id="setupMsg" class="msg"></div>
     <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeModal('setupModal')">Cancelar</button><button id="setupSaveBtn" class="btn btn-primary">Guardar</button></div>
@@ -509,7 +517,7 @@ function showView(view){
 async function loadSetups(){
   setStatus("setupStatus","A carregar setups...");
   try{
-    const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").order("updated_at",{ascending:false});if(error)throw error;
+    const {data,error}=await sb.from("setups").select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,notas,estado,updated_at").order("updated_at",{ascending:false});if(error)throw error;
     setups=data||[];renderSetups();setStatus("setupStatus",`Ligação ao Supabase OK · ${setups.length} setup(s).`);
   }catch(e){console.error(e);setups=[];renderSetups();setStatus("setupStatus","Erro ao ler setups: "+(e?.message||e),true)}
 }
@@ -519,7 +527,7 @@ function renderSetups(){
   $("setupList").innerHTML=rows.length?rows.map(s=>`<article class="list-card clickable" onclick="openSetup('${s.id}')"><div class="row-between"><div class="strong">${esc(s.codigo_peca||"SEM CÓDIGO")}</div><span class="badge">${esc(s.estado||"Ativo")}</span></div><div style="margin-top:6px;font-weight:750">${esc(s.designacao||"")}</div><div class="muted" style="margin-top:5px">${esc(s.cliente||"Sem cliente")} · ${esc(s.operacao||"")} · ${esc(s.maquina||"")}${s.programa_cnc?" · Prog. "+esc(s.programa_cnc):""}</div></article>`).join(""):'<div class="empty">Nenhum setup encontrado.</div>'
 }
 function openNewSetup(){
-  ["sId","sCode","sDesignation","sClient","sOperation","sMachine","sProgram"].forEach(id=>$(id).value="");
+  ["sId","sCode","sDesignation","sClient","sOperation","sMachine","sProgram","sNotes"].forEach(id=>$(id).value="");
   $("setupModalTitle").textContent="Novo setup";setMsg("setupMsg","");$("setupModal").classList.remove("hidden")
 }
 async function openSetup(id){
@@ -532,6 +540,7 @@ async function openSetup(id){
   $("dOperation").textContent=s.operacao||"—";
   $("dMachine").textContent=s.maquina||"—";
   $("dProgram").textContent=s.programa_cnc||"—";
+  $("dNotes").textContent=s.notas||"—";
   $("detailSubtitle").textContent=[s.codigo_peca,s.designacao,s.operacao,s.maquina].filter(Boolean).join(" · ");
   const contextText=`Programa ${s.programa_cnc||"—"} · ${s.operacao||"—"} · ${s.maquina||"—"}`;
   $("toolsContext").textContent=contextText;
@@ -567,7 +576,7 @@ function renderSetupPhoto(){
   $("setupPhotoPreviewWrap").classList.toggle("hidden",!has);
   if(has){
     $("setupPhotoPreview").src=currentSetupPhoto.signedUrl;
-    $("setupPhotoName").textContent="";
+    $("setupPhotoName").textContent="Fotografia atual da montagem";
   }else{
     $("setupPhotoPreview").removeAttribute("src");
     $("setupPhotoName").textContent="";
@@ -698,6 +707,7 @@ function editCurrentSetup(){
   $("sOperation").value=s.operacao||"";
   $("sMachine").value=s.maquina||"";
   $("sProgram").value=s.programa_cnc||"";
+  $("sNotes").value=s.notas||"";
   $("setupModalTitle").textContent="Editar setup";
   setMsg("setupMsg","");
   $("setupDetailModal").classList.add("hidden");
@@ -841,10 +851,10 @@ async function saveSetup(ev){
   if(!designation||!operation||!machine){setMsg("setupMsg","Designação, Operação e Máquina são obrigatórios.","error");return false}
   b.disabled=true;b.textContent="A guardar...";
   try{
-    const payload={codigo_peca:code||null,designacao:designation,cliente:$("sClient").value.trim()||null,operacao:operation,maquina:machine,programa_cnc:$("sProgram").value.trim()||null,updated_at:new Date().toISOString()};
+    const payload={codigo_peca:code||null,designacao:designation,cliente:$("sClient").value.trim()||null,operacao:operation,maquina:machine,programa_cnc:$("sProgram").value.trim()||null,notas:$("sNotes").value.trim()||null,updated_at:new Date().toISOString()};
     let res;
-    if(id)res=await sb.from("setups").update(payload).eq("id",id).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
-    else res=await sb.from("setups").insert([{...payload,estado:"Ativo"}]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,estado,updated_at").single();
+    if(id)res=await sb.from("setups").update(payload).eq("id",id).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,notas,estado,updated_at").single();
+    else res=await sb.from("setups").insert([{...payload,estado:"Ativo"}]).select("id,codigo_peca,designacao,cliente,operacao,maquina,programa_cnc,notas,estado,updated_at").single();
     if(res.error)throw res.error;
     await loadSetups();
     closeModal("setupModal");
