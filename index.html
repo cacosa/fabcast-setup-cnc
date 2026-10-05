@@ -87,9 +87,21 @@
     .setup-context{font-size:12px;color:var(--muted)}
     .table .row-actions{white-space:nowrap;text-align:right}
     .btn-small{padding:6px 9px;border-radius:8px;font-size:12px}
-    #toolsAccordionBody .table{min-width:1120px}
-    #toolsAccordionBody .table th:nth-child(3),
-    #toolsAccordionBody .table td:nth-child(3){width:110px;max-width:110px}
+    #toolsAccordionBody .table{min-width:980px;table-layout:fixed}
+    #toolsAccordionBody .table th,#toolsAccordionBody .table td{vertical-align:middle}
+    #toolsAccordionBody .table th:nth-child(1),#toolsAccordionBody .table td:nth-child(1){width:64px}
+    #toolsAccordionBody .table th:nth-child(2),#toolsAccordionBody .table td:nth-child(2){width:135px}
+    #toolsAccordionBody .table th:nth-child(3),#toolsAccordionBody .table td:nth-child(3){width:92px}
+    #toolsAccordionBody .table th:nth-child(4),#toolsAccordionBody .table td:nth-child(4){width:125px}
+    #toolsAccordionBody .table th:nth-child(5),#toolsAccordionBody .table td:nth-child(5){width:230px}
+    #toolsAccordionBody .table th:nth-child(6),#toolsAccordionBody .table td:nth-child(6){width:95px}
+    #toolsAccordionBody .table th:nth-child(7),#toolsAccordionBody .table td:nth-child(7){width:130px}
+    #toolsAccordionBody .table th:nth-child(8),#toolsAccordionBody .table td:nth-child(8){
+      width:92px;min-width:92px;max-width:92px;position:sticky;right:0;background:#fff;z-index:2
+    }
+    #toolsAccordionBody .table th:nth-child(8){background:#f8fafc;z-index:3}
+    .tool-main{font-weight:800}
+    .tool-code{display:block;margin-top:3px;font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
     #originsAccordionBody .table{min-width:1080px}
     .section-toolbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -120,7 +132,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.4.2 · FICHA COMPACTA + NOTAS</div>
+      <div class="version">V2.5.0 · TABELA FERRAMENTAS</div>
     </div>
   </aside>
 
@@ -249,14 +261,14 @@
           <table class="table">
             <thead>
               <tr>
-                <th>T</th>
-                <th>Tipo</th>
-                <th>Código interno</th>
+                <th>Posição</th>
                 <th>Suporte</th>
-                <th>Ø</th>
-                <th>Comp. ferramenta</th>
-                <th>Comp. alonga</th>
-                <th></th>
+                <th>Ø Alonga</th>
+                <th>Comp. útil alonga</th>
+                <th>Ferramenta / Código interno</th>
+                <th>Ø ferramenta</th>
+                <th>Comp. útil ferramenta</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="detailToolsBody"></tbody>
@@ -301,17 +313,18 @@
 <!-- FERRAMENTA DO SETUP -->
 <section id="toolEditorModal" class="modal hidden" onclick="if(event.target===this)closeModal('toolEditorModal')">
   <form class="modal-card" onsubmit="saveToolEntry(event)">
-    <div class="modal-head"><h2 id="toolEditorTitle">Adicionar ferramenta</h2><button type="button" class="btn btn-secondary" onclick="closeModal('toolEditorModal')">Fechar</button></div>
+    <div class="modal-head"><h2 id="toolEditorTitle">Adicionar montagem de ferramenta</h2><button type="button" class="btn btn-secondary" onclick="closeModal('toolEditorModal')">Fechar</button></div>
     <input id="toolId" type="hidden">
     <div id="toolEditorContext" class="statusbar"></div>
     <div class="form-grid">
-      <div class="field"><label>Posição T</label><input id="toolT" placeholder="Ex.: T1"></div>
-      <div class="field"><label>Tipo</label><input id="toolType" placeholder="Ex.: Fresa, broca, macho..."></div>
-      <div class="field"><label>Código interno</label><input id="toolInternalCode" maxlength="8" inputmode="numeric" placeholder="5xxxxxxx"></div>
+      <div class="field"><label>Posição T</label><input id="toolT" placeholder="Ex.: T4"></div>
       <div class="field"><label>Suporte</label><select id="toolSupport"></select></div>
-      <div class="field"><label>Diâmetro (mm)</label><input id="toolDiameter" type="number" step="0.001"></div>
-      <div class="field"><label>Comprimento ferramenta (mm)</label><input id="toolLength" type="number" step="0.001"></div>
-      <div class="field"><label>Comprimento alonga (mm)</label><input id="toolExtension" type="number" step="0.001"></div>
+      <div class="field"><label>Ø Alonga (mm)</label><input id="toolExtensionDiameter" type="number" step="0.001" placeholder="Opcional"></div>
+      <div class="field"><label>Comprimento útil alonga (mm)</label><input id="toolExtension" type="number" step="0.001" placeholder="Opcional"></div>
+      <div class="field"><label>Ferramenta</label><input id="toolType" placeholder="Ex.: Broca, fresa, macho..."></div>
+      <div class="field"><label>Código interno</label><input id="toolInternalCode" maxlength="8" inputmode="numeric" placeholder="5xxxxxxx"></div>
+      <div class="field"><label>Ø ferramenta (mm)</label><input id="toolDiameter" type="number" step="0.001"></div>
+      <div class="field"><label>Comprimento útil ferramenta (mm)</label><input id="toolLength" type="number" step="0.001"></div>
     </div>
     <div id="toolEditorMsg" class="msg"></div>
     <div class="modal-actions">
@@ -627,7 +640,7 @@ async function loadSetupDetail(id){
     await loadSetupPhoto();
     const [toolsRes,originsRes]=await Promise.all([
       sb.from("setup_ferramentas")
-        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro,comp_ferramenta,comp_alonga,ordem")
+        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro_alonga,diametro,comp_ferramenta,comp_alonga,ordem")
         .eq("setup_id",id)
         .order("ordem")
         .order("posicao_t"),
@@ -656,12 +669,12 @@ function renderSetupTools(){
   $("detailToolsBody").innerHTML=currentSetupTools.length
     ?currentSetupTools.map(t=>`<tr>
         <td class="code">${esc(t.posicao_t||"—")}</td>
-        <td>${esc(t.tipo||"—")}</td>
-        <td>${esc(t.codigo_interno||"—")}</td>
         <td>${esc(t.suporte||"—")}</td>
+        <td>${esc(t.diametro_alonga??"—")}</td>
+        <td>${esc(t.comp_alonga??"—")}</td>
+        <td><span class="tool-main">${esc(t.tipo||"—")}</span>${t.codigo_interno?`<span class="tool-code">${esc(t.codigo_interno)}</span>`:""}</td>
         <td>${esc(t.diametro??"—")}</td>
         <td>${esc(t.comp_ferramenta??"—")}</td>
-        <td>${esc(t.comp_alonga??"—")}</td>
         <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openToolEditor('${t.id}')">Editar</button></td>
       </tr>`).join("")
     :'<tr><td colspan="8" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
@@ -741,8 +754,9 @@ function openToolEditor(id=""){
   fillToolSupportOptions(t?.suporte||"");
   $("toolDiameter").value=t?.diametro??"";
   $("toolLength").value=t?.comp_ferramenta??"";
+  $("toolExtensionDiameter").value=t?.diametro_alonga??"";
   $("toolExtension").value=t?.comp_alonga??"";
-  $("toolEditorTitle").textContent=t?"Editar ferramenta":"Adicionar ferramenta";
+  $("toolEditorTitle").textContent=t?"Editar montagem de ferramenta":"Adicionar montagem de ferramenta";
   $("toolEditorContext").textContent=setupContextText();
   $("deleteToolBtn").classList.toggle("hidden",!t);
   setMsg("toolEditorMsg","");
@@ -766,6 +780,7 @@ async function saveToolEntry(ev){
       tipo:$("toolType").value.trim()||null,
       codigo_interno:code||null,
       suporte:$("toolSupport").value||null,
+      diametro_alonga:numOrNull($("toolExtensionDiameter").value),
       diametro:numOrNull($("toolDiameter").value),
       comp_ferramenta:numOrNull($("toolLength").value),
       comp_alonga:numOrNull($("toolExtension").value),
