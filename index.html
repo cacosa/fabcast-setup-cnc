@@ -63,6 +63,16 @@
     .detail-item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fafbfc}
     .detail-item small{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
     .detail-item strong{font-size:14px}
+    .setup-summary{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;align-items:stretch;margin-bottom:18px}
+    .setup-summary .detail-grid{margin-bottom:0;align-content:start}
+    .setup-photo-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafbfc;display:flex;flex-direction:column;min-height:220px}
+    .setup-photo-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:8px}
+    .setup-photo-drop{flex:1;display:flex;align-items:center;justify-content:center;min-height:160px;border:2px dashed #b7c3d0;border-radius:10px;background:#fff;text-align:center;padding:14px;cursor:pointer}
+    .setup-photo-drop.drag{border-color:var(--blue);background:#f3f8ff}
+    .setup-photo-drop small{display:block;margin-top:6px;color:var(--muted)}
+    .setup-photo-preview{display:flex;flex-direction:column;gap:9px}
+    .setup-photo-preview img{width:100%;height:230px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .setup-photo-actions{display:flex;gap:8px;flex-wrap:wrap}
     .accordion{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden;background:#fff}
     .accordion-head{width:100%;border:0;background:#f8fafc;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:900;color:var(--text)}
     .accordion-head:hover{background:#f2f5f9}
@@ -85,7 +95,7 @@
 
     @media(max-width:850px){
       .app-shell{display:block}aside{display:none}.page{padding:14px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.user-email{display:none}
-      .table-wrap{overflow:auto}.detail-grid{grid-template-columns:1fr}
+      .table-wrap{overflow:auto}.detail-grid{grid-template-columns:1fr}.setup-summary{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -107,7 +117,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.3.2 · ACESSO DIRETO</div>
+      <div class="version">V2.4.2 · AJUSTE FOTO</div>
     </div>
   </aside>
 
@@ -188,13 +198,31 @@
 
     <input id="detailSetupId" type="hidden">
 
-    <div class="detail-grid">
-      <div class="detail-item"><small>Código da peça</small><strong id="dCode">—</strong></div>
-      <div class="detail-item"><small>Designação</small><strong id="dDesignation">—</strong></div>
-      <div class="detail-item"><small>Cliente</small><strong id="dClient">—</strong></div>
-      <div class="detail-item"><small>Operação</small><strong id="dOperation">—</strong></div>
-      <div class="detail-item"><small>Máquina</small><strong id="dMachine">—</strong></div>
-      <div class="detail-item"><small>Programa CNC</small><strong id="dProgram">—</strong></div>
+    <div class="setup-summary">
+      <div class="detail-grid">
+        <div class="detail-item"><small>Código da peça</small><strong id="dCode">—</strong></div>
+        <div class="detail-item"><small>Designação</small><strong id="dDesignation">—</strong></div>
+        <div class="detail-item"><small>Cliente</small><strong id="dClient">—</strong></div>
+        <div class="detail-item"><small>Operação</small><strong id="dOperation">—</strong></div>
+        <div class="detail-item"><small>Máquina</small><strong id="dMachine">—</strong></div>
+        <div class="detail-item"><small>Programa CNC</small><strong id="dProgram">—</strong></div>
+      </div>
+      <div class="setup-photo-card">
+        <div class="setup-photo-title">Fotografia da montagem</div>
+        <div id="setupPhotoDrop" class="setup-photo-drop">
+          <div><strong>Arraste a fotografia para aqui</strong><small>ou clique para selecionar · JPG, PNG ou WEBP · máximo 1 MB</small></div>
+        </div>
+        <input id="setupPhotoFile" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
+        <div id="setupPhotoPreviewWrap" class="setup-photo-preview hidden">
+          <img id="setupPhotoPreview" alt="Fotografia da montagem">
+          <div id="setupPhotoName" class="strong"></div>
+          <div class="setup-photo-actions" style="margin-top:-2px">
+            <button id="setupPhotoDeleteBtn" type="button" class="btn btn-danger">Remover</button>
+            <button id="setupPhotoReplaceBtn" type="button" class="btn btn-secondary">Substituir</button>
+          </div>
+        </div>
+        <div id="setupPhotoMsg" class="msg"></div>
+      </div>
     </div>
 
     <div class="accordion">
@@ -394,7 +422,7 @@ const planningSb=supabase.createClient(PLANNING_URL,PLANNING_KEY,{auth:{persistS
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 let setups=[],parts=[],machines=[],supports=[],originTypes=[];
-let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[];
+let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[],currentSetupPhoto=null;
 let supportSelectedFile=null,supportRemoveExisting=false,currentSupportImagePath=null;
 const signedSupportUrls=new Map();
 
@@ -521,8 +549,73 @@ async function openSetup(id){
   await loadSetupDetail(id);
 }
 
+
+async function loadSetupPhoto(){
+  currentSetupPhoto=null;
+  const {data,error}=await sb.from("setup_fotos").select("id,setup_id,storage_path,ordem").eq("setup_id",currentSetupId).order("ordem").limit(1);
+  if(error){console.error(error);setMsg("setupPhotoMsg","Erro ao carregar fotografia: "+error.message,"error");renderSetupPhoto();return;}
+  currentSetupPhoto=(data||[])[0]||null;
+  if(currentSetupPhoto?.storage_path){
+    const {data:signed,error:e}=await sb.storage.from("setup-fotos").createSignedUrl(currentSetupPhoto.storage_path,3600);
+    currentSetupPhoto.signedUrl=e?null:signed?.signedUrl;
+  }
+  renderSetupPhoto();
+}
+function renderSetupPhoto(){
+  const has=!!(currentSetupPhoto&&currentSetupPhoto.signedUrl);
+  $("setupPhotoDrop").classList.toggle("hidden",has);
+  $("setupPhotoPreviewWrap").classList.toggle("hidden",!has);
+  if(has){
+    $("setupPhotoPreview").src=currentSetupPhoto.signedUrl;
+    $("setupPhotoName").textContent="";
+  }else{
+    $("setupPhotoPreview").removeAttribute("src");
+    $("setupPhotoName").textContent="";
+  }
+  setMsg("setupPhotoMsg","");
+}
+async function uploadSetupPhoto(file){
+  if(!file)return;
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){alert("Formato inválido. Use JPG, PNG ou WEBP.");return;}
+  if(file.size>1024*1024){alert("A fotografia ultrapassa 1 MB. Reduza/comprima a imagem antes de enviar.");return;}
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+  const path=`setups/${currentSetupId}/foto_montagem.${ext}`;
+  setMsg("setupPhotoMsg","A guardar fotografia...");
+  try{
+    if(currentSetupPhoto?.storage_path){
+      await sb.storage.from("setup-fotos").remove([currentSetupPhoto.storage_path]);
+    }
+    const {error:upErr}=await sb.storage.from("setup-fotos").upload(path,file,{upsert:true,contentType:file.type});
+    if(upErr)throw upErr;
+    let res;
+    if(currentSetupPhoto){
+      res=await sb.from("setup_fotos").update({storage_path:path,ordem:1}).eq("id",currentSetupPhoto.id).select().single();
+    }else{
+      res=await sb.from("setup_fotos").insert({setup_id:currentSetupId,storage_path:path,ordem:1}).select().single();
+    }
+    if(res.error)throw res.error;
+    await loadSetupPhoto();
+    setMsg("setupPhotoMsg","Fotografia guardada.");
+  }catch(e){
+    console.error(e);setMsg("setupPhotoMsg","Erro ao guardar fotografia: "+(e?.message||e),"error");
+  }
+}
+async function deleteSetupPhoto(){
+  if(!currentSetupPhoto)return;
+  if(!confirm("Remover a fotografia da montagem deste setup?"))return;
+  try{
+    if(currentSetupPhoto.storage_path)await sb.storage.from("setup-fotos").remove([currentSetupPhoto.storage_path]);
+    const {error}=await sb.from("setup_fotos").delete().eq("id",currentSetupPhoto.id);
+    if(error)throw error;
+    currentSetupPhoto=null;renderSetupPhoto();setMsg("setupPhotoMsg","Fotografia removida.");
+  }catch(e){
+    console.error(e);setMsg("setupPhotoMsg","Erro ao remover fotografia: "+(e?.message||e),"error");
+  }
+}
+
 async function loadSetupDetail(id){
   try{
+    await loadSetupPhoto();
     const [toolsRes,originsRes]=await Promise.all([
       sb.from("setup_ferramentas")
         .select("id,posicao_t,tipo,codigo_interno,suporte,diametro,comp_ferramenta,comp_alonga,ordem")
@@ -890,6 +983,17 @@ window.deleteToolEntry=deleteToolEntry;
 window.openOriginEntryEditor=openOriginEntryEditor;
 window.saveOriginEntry=saveOriginEntry;
 window.deleteOriginEntry=deleteOriginEntry;
+
+const setupPhotoDrop=$("setupPhotoDrop");
+const setupPhotoFile=$("setupPhotoFile");
+setupPhotoDrop.onclick=()=>setupPhotoFile.click();
+$("setupPhotoReplaceBtn").onclick=()=>setupPhotoFile.click();
+$("setupPhotoDeleteBtn").onclick=deleteSetupPhoto;
+setupPhotoFile.onchange=e=>uploadSetupPhoto(e.target.files?.[0]);
+["dragenter","dragover"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.add("drag")}));
+["dragleave","drop"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.remove("drag")}));
+setupPhotoDrop.addEventListener("drop",e=>uploadSetupPhoto(e.dataTransfer.files?.[0]));
+
 boot();
 </script>
 </body>
