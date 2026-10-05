@@ -75,6 +75,9 @@
     .table .row-actions{white-space:nowrap;text-align:right}
     .btn-small{padding:6px 9px;border-radius:8px;font-size:12px}
     #toolsAccordionBody .table{min-width:1120px}
+    #toolsAccordionBody .table th:nth-child(3),
+    #toolsAccordionBody .table td:nth-child(3){width:110px;max-width:110px}
+
     #originsAccordionBody .table{min-width:1080px}
     .section-toolbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
@@ -88,14 +91,11 @@
 </head>
 <body>
 <section id="loginView" class="login-screen">
-  <form class="login-card" onsubmit="login(event)">
+  <div class="login-card">
     <div class="brand">FABCAST</div>
-    <div class="subtitle">Setup CNC · V2.3</div>
-    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
-    <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
-    <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
-    <div id="loginMsg" class="msg"></div>
-  </form>
+    <div class="subtitle">Setup CNC · V2.3.2</div>
+    <div id="loginMsg" class="msg">A iniciar...</div>
+  </div>
 </section>
 
 <section id="appView" class="app-shell hidden">
@@ -107,7 +107,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.3 · TABELAS AMPLAS</div>
+      <div class="version">V2.3.2 · ACESSO DIRETO</div>
     </div>
   </aside>
 
@@ -115,8 +115,7 @@
     <header class="topbar">
       <div id="topTitle" class="title">Setups CNC</div>
       <div class="top-actions">
-        <div id="userEmail" class="user-email"></div>
-        <button class="btn btn-secondary" onclick="logout()">Sair</button>
+        <div id="userEmail" class="user-email">Acesso direto</div>
       </div>
     </header>
 
@@ -402,25 +401,48 @@ const signedSupportUrls=new Map();
 function setMsg(id,text,type=""){const x=$(id);if(!x)return;x.textContent=text||"";x.className="msg"+(type?" "+type:"")}
 function setStatus(id,text,error=false){const x=$(id);if(!x)return;x.textContent=text||"";x.style.color=error?"#b42318":"#687386"}
 function closeModal(id){$(id).classList.add("hidden")}
-function showLogin(){$("loginView").classList.remove("hidden");$("appView").classList.add("hidden")}
-function showApp(user){$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("userEmail").textContent=user?.email||""}
+function showLogin(message="A iniciar..."){
+  $("loginView").classList.remove("hidden");
+  $("appView").classList.add("hidden");
+  setMsg("loginMsg",message);
+}
+function showApp(user){
+  $("loginView").classList.add("hidden");
+  $("appView").classList.remove("hidden");
+  $("userEmail").textContent = user?.is_anonymous ? "Acesso direto" : (user?.email || "Acesso direto");
+}
 
 async function boot(){
   try{
-    const {data,error}=await sb.auth.getSession();if(error)throw error;
-    if(data?.session?.user){showApp(data.session.user);await loadAll()}else showLogin();
-    sb.auth.onAuthStateChange(async(_,session)=>{if(session?.user){showApp(session.user);await loadAll()}else showLogin()});
-  }catch(e){console.error(e);showLogin();setMsg("loginMsg","Erro ao iniciar: "+(e?.message||e),"error")}
+    showLogin("A iniciar...");
+    let {data,error}=await sb.auth.getSession();
+    if(error)throw error;
+
+    let session=data?.session||null;
+
+    // Sem sessão: entra automaticamente como utilizador anónimo.
+    // Mantém as políticas RLS existentes para o papel "authenticated".
+    if(!session){
+      const anon=await sb.auth.signInAnonymously();
+      if(anon.error)throw anon.error;
+      session=anon.data?.session||null;
+    }
+
+    if(!session?.user)throw new Error("Não foi possível criar a sessão de acesso direto.");
+
+    showApp(session.user);
+    await loadAll();
+
+    sb.auth.onAuthStateChange(async(event,newSession)=>{
+      if(newSession?.user){
+        showApp(newSession.user);
+      }
+    });
+  }catch(e){
+    console.error(e);
+    showLogin("Erro ao iniciar o acesso direto: "+(e?.message||e));
+  }
 }
-async function login(ev){
-  ev.preventDefault();const b=$("loginBtn");b.disabled=true;b.textContent="A entrar...";setMsg("loginMsg","");
-  try{
-    const {data,error}=await sb.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});if(error)throw error;
-    showApp(data.session.user);await loadAll();
-  }catch(e){setMsg("loginMsg","Não foi possível entrar: "+(e?.message||e),"error")}
-  finally{b.disabled=false;b.textContent="Entrar"}return false
-}
-async function logout(){await sb.auth.signOut();showLogin()}
 
 async function loadAll(){
   await Promise.all([loadPlanning(),loadSetups(),loadSupports(),loadOrigins()]);
