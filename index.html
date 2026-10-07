@@ -134,7 +134,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.7.2 · CAMPOS EDITÁVEIS</div>
+      <div class="version">V2.8.0 · BACKUP</div>
     </div>
   </aside>
 
@@ -142,6 +142,7 @@
     <header class="topbar">
       <div id="topTitle" class="title">Setups CNC</div>
       <div class="top-actions">
+        <button id="backupBtn" class="btn btn-secondary" type="button" onclick="backupApp()">⬇ Backup</button>
         <div id="userEmail" class="user-email">Acesso direto</div>
       </div>
     </header>
@@ -1254,6 +1255,7 @@ async function saveOrigin(ev){
 
 document.addEventListener("keydown",e=>{if(e.key==="Escape")["setupDetailModal","toolEditorModal","originEntryModal","setupModal","catalogToolModal","supportModal","originModal"].forEach(id=>closeModal(id))});
 window.syncSetupToolFromCatalog=syncSetupToolFromCatalog;
+window.backupApp=backupApp;
 window.openCatalogTool=openCatalogTool;
 window.saveCatalogTool=saveCatalogTool;
 window.renderCatalogTools=renderCatalogTools;
@@ -1277,6 +1279,76 @@ setupPhotoFile.onchange=e=>uploadSetupPhoto(e.target.files?.[0]);
 ["dragenter","dragover"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.add("drag")}));
 ["dragleave","drop"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.remove("drag")}));
 setupPhotoDrop.addEventListener("drop",e=>uploadSetupPhoto(e.dataTransfer.files?.[0]));
+
+
+async function backupApp(){
+  const btn=$("backupBtn");
+  const original=btn?.textContent||"⬇ Backup";
+  if(btn){btn.disabled=true;btn.textContent="A preparar...";}
+  try{
+    const tableNames=[
+      "setups",
+      "setup_ferramentas",
+      "setup_origens",
+      "setup_fotos",
+      "suportes",
+      "tipos_origem",
+      "ferramentas"
+    ];
+
+    const backup={
+      app:"FABCAST Setup CNC",
+      version:"V2.8.0",
+      exported_at:new Date().toISOString(),
+      format:"fabcast-setup-cnc-backup-v1",
+      notes:"Backup lógico dos dados. As imagens do Storage não são copiadas; ficam guardadas as referências storage_path.",
+      tables:{}
+    };
+
+    for(const table of tableNames){
+      const {data,error}=await sb.from(table).select("*");
+      if(error){
+        // Mantém o backup útil mesmo se uma tabela opcional ainda não existir.
+        backup.tables[table]={
+          error:error.message,
+          rows:[]
+        };
+      }else{
+        backup.tables[table]={
+          count:(data||[]).length,
+          rows:data||[]
+        };
+      }
+    }
+
+    const json=JSON.stringify(backup,null,2);
+    const blob=new Blob([json],{type:"application/json;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    const now=new Date();
+    const stamp=[
+      now.getFullYear(),
+      String(now.getMonth()+1).padStart(2,"0"),
+      String(now.getDate()).padStart(2,"0"),
+      "_",
+      String(now.getHours()).padStart(2,"0"),
+      String(now.getMinutes()).padStart(2,"0")
+    ].join("");
+    a.href=url;
+    a.download=`FABCAST_Setup_CNC_Backup_${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    alert("Backup criado com sucesso. O ficheiro JSON foi guardado na pasta de transferências.");
+  }catch(e){
+    console.error(e);
+    alert("Erro ao criar backup: "+(e?.message||e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=original;}
+  }
+}
 
 boot();
 </script>
