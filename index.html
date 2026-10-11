@@ -100,11 +100,10 @@
     #toolsAccordionBody .table th:nth-child(5),#toolsAccordionBody .table td:nth-child(5){width:230px}
     #toolsAccordionBody .table th:nth-child(6),#toolsAccordionBody .table td:nth-child(6){width:95px}
     #toolsAccordionBody .table th:nth-child(7),#toolsAccordionBody .table td:nth-child(7){width:130px}
-    #toolsAccordionBody .table th:nth-child(8),#toolsAccordionBody .table td:nth-child(8){width:120px}
-    #toolsAccordionBody .table th:nth-child(9),#toolsAccordionBody .table td:nth-child(9){
+    #toolsAccordionBody .table th:nth-child(8),#toolsAccordionBody .table td:nth-child(8){
       width:92px;min-width:92px;max-width:92px;position:sticky;right:0;background:#fff;z-index:2
     }
-    #toolsAccordionBody .table th:nth-child(9){background:#f8fafc;z-index:3}
+    #toolsAccordionBody .table th:nth-child(8){background:#f8fafc;z-index:3}
     .tool-main{font-weight:800}
     .tool-code{display:block;margin-top:3px;font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
@@ -138,7 +137,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.8.1 · CARTÕES COMPACTOS</div>
+      <div class="version">V2.8.2 · MONTAGEM SIMPLIFICADA</div>
     </div>
   </aside>
 
@@ -295,7 +294,6 @@
                 <th>Ferramenta / Código interno</th>
                 <th>Ø ferramenta</th>
                 <th>Comp. útil ferramenta</th>
-                <th>Comp. montagem</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -365,7 +363,6 @@
       <input id="toolInternalCode" type="hidden">
       <div class="field"><label>Ø ferramenta (mm)</label><input id="toolDiameter" type="number" step="0.001"></div>
       <div class="field"><label>Comprimento útil ferramenta (mm)</label><input id="toolLength" type="number" step="0.001"></div>
-      <div class="field"><label>Comprimento de montagem (mm)</label><input id="toolAssemblyLength" type="number" step="0.001" placeholder="Projeção efetiva na montagem"></div>
     </div>
     <div id="toolEditorMsg" class="msg"></div>
     <div class="modal-actions">
@@ -739,7 +736,7 @@ async function loadSetupDetail(id){
     await loadSetupPhoto();
     const [toolsRes,originsRes]=await Promise.all([
       sb.from("setup_ferramentas")
-        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro_alonga,diametro,comp_ferramenta,comp_alonga,comprimento_montagem,ordem")
+        .select("id,posicao_t,tipo,codigo_interno,suporte,diametro_alonga,diametro,comp_ferramenta,comp_alonga,ordem")
         .eq("setup_id",id)
         .order("ordem")
         .order("posicao_t"),
@@ -774,10 +771,9 @@ function renderSetupTools(){
         <td><span class="tool-main">${esc(t.tipo||"—")}</span>${t.codigo_interno?`<span class="tool-code">${esc(t.codigo_interno)}</span>`:""}</td>
         <td>${esc(t.diametro??"—")}</td>
         <td>${esc(t.comp_ferramenta??"—")}</td>
-        <td>${esc(t.comprimento_montagem??"—")}</td>
         <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openToolEditor('${t.id}')">Editar</button></td>
       </tr>`).join("")
-    :'<tr><td colspan="9" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
+    :'<tr><td colspan="8" class="section-empty">Ainda não existem ferramentas neste setup.</td></tr>';
 }
 
 function renderSetupOrigins(){
@@ -933,7 +929,6 @@ function openToolEditor(id=""){
   fillToolSupportOptions(t?.suporte||"");
   $("toolDiameter").value=t?.diametro??catalogTool?.diametro??"";
   $("toolLength").value=t?.comp_ferramenta??catalogTool?.comprimento_util??"";
-  $("toolAssemblyLength").value=t?.comprimento_montagem??"";
   $("toolExtensionDiameter").value=t?.diametro_alonga??"";
   $("toolExtension").value=t?.comp_alonga??"";
   $("toolEditorTitle").textContent=t?"Editar montagem de ferramenta":"Adicionar montagem de ferramenta";
@@ -965,7 +960,6 @@ async function saveToolEntry(ev){
       diametro:numOrNull($("toolDiameter").value),
       comp_ferramenta:numOrNull($("toolLength").value),
       comp_alonga:numOrNull($("toolExtension").value),
-      comprimento_montagem:numOrNull($("toolAssemblyLength").value),
       ordem:id?(currentSetupTools.find(x=>x.id===id)?.ordem||0):currentSetupTools.length
     };
     const res=id?await sb.from("setup_ferramentas").update(payload).eq("id",id):await sb.from("setup_ferramentas").insert([payload]);
