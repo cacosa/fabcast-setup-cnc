@@ -137,7 +137,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.9.9 · SEPARADOR FERRAMENTA / CÓDIGO</div>
+      <div class="version">V2.9.10 · ORIGENS 3 DECIMAIS</div>
     </div>
   </aside>
 
@@ -784,12 +784,12 @@ function renderSetupOrigins(){
   $("detailOriginsBody").innerHTML=currentSetupOrigins.length
     ?currentSetupOrigins.map(o=>`<tr>
         <td class="code">${esc(o.origem||"—")}</td>
-        <td>${esc(o.x??"—")}</td>
-        <td>${esc(o.y??"—")}</td>
-        <td>${esc(o.z??"—")}</td>
-        <td>${esc(o.a??"—")}</td>
-        <td>${esc(o.b??"—")}</td>
-        <td>${esc(o.c??"—")}</td>
+        <td>${esc(fmtOrigin3(o.x))}</td>
+        <td>${esc(fmtOrigin3(o.y))}</td>
+        <td>${esc(fmtOrigin3(o.z))}</td>
+        <td>${esc(fmtOrigin3(o.a))}</td>
+        <td>${esc(fmtOrigin3(o.b))}</td>
+        <td>${esc(fmtOrigin3(o.c))}</td>
         <td>${esc(o.notas||"—")}</td>
         <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openOriginEntryEditor('${o.id}')">Editar</button></td>
       </tr>`).join("")
@@ -945,6 +945,20 @@ function numOrNull(v){
   if(s==="")return null;
   const n=Number(s);return Number.isFinite(n)?n:null;
 }
+function originNum3(v){
+  const n=numOrNull(v);
+  return n===null?null:Math.round((n+Number.EPSILON)*1000)/1000;
+}
+function fmtOrigin3(v){
+  if(v===null||v===undefined||v==="")return "—";
+  const n=Number(v);
+  return Number.isFinite(n)?n.toFixed(3):String(v);
+}
+function inputOrigin3(v){
+  if(v===null||v===undefined||v==="")return "";
+  const n=Number(v);
+  return Number.isFinite(n)?n.toFixed(3):String(v);
+}
 async function saveToolEntry(ev){
   ev.preventDefault();
   const s=currentSetup();if(!s){setMsg("toolEditorMsg","Setup inválido.","error");return false}
@@ -992,12 +1006,12 @@ function openOriginEntryEditor(id=""){
   const o=currentSetupOrigins.find(x=>x.id===id);
   $("originEntryId").value=o?.id||"";
   fillOriginTypeOptions(o?.origem||"");
-  $("originX").value=o?.x??"";
-  $("originY").value=o?.y??"";
-  $("originZ").value=o?.z??"";
-  $("originA").value=o?.a??"";
-  $("originB").value=o?.b??"";
-  $("originC").value=o?.c??"";
+  $("originX").value=inputOrigin3(o?.x);
+  $("originY").value=inputOrigin3(o?.y);
+  $("originZ").value=inputOrigin3(o?.z);
+  $("originA").value=inputOrigin3(o?.a);
+  $("originB").value=inputOrigin3(o?.b);
+  $("originC").value=inputOrigin3(o?.c);
   $("originNotes").value=o?.notas||"";
   $("originEntryTitle").textContent=o?"Editar origem":"Adicionar origem";
   $("originEntryContext").textContent=setupContextText();
@@ -1015,8 +1029,8 @@ async function saveOriginEntry(ev){
     const payload={
       setup_id:s.id,
       origem:codigo,
-      x:numOrNull($("originX").value),y:numOrNull($("originY").value),z:numOrNull($("originZ").value),
-      a:numOrNull($("originA").value),b:numOrNull($("originB").value),c:numOrNull($("originC").value),
+      x:originNum3($("originX").value),y:originNum3($("originY").value),z:originNum3($("originZ").value),
+      a:originNum3($("originA").value),b:originNum3($("originB").value),c:originNum3($("originC").value),
       notas:$("originNotes").value.trim()||null,
       ordem:id?(currentSetupOrigins.find(x=>x.id===id)?.ordem||0):currentSetupOrigins.length
     };
@@ -1314,12 +1328,12 @@ function generateSetupPdf(){
 
   const originsHtml=origins.map(o=>`<tr>
       <td>${esc(o.origem||"")}</td>
-      <td>${esc(o.x??"")}</td>
-      <td>${esc(o.y??"")}</td>
-      <td>${esc(o.z??"")}</td>
-      <td>${esc(o.a??"")}</td>
-      <td>${esc(o.b??"")}</td>
-      <td>${esc(o.c??"")}</td>
+      <td>${esc(o.x===null||o.x===undefined||o.x===""?"":fmtOrigin3(o.x))}</td>
+      <td>${esc(o.y===null||o.y===undefined||o.y===""?"":fmtOrigin3(o.y))}</td>
+      <td>${esc(o.z===null||o.z===undefined||o.z===""?"":fmtOrigin3(o.z))}</td>
+      <td>${esc(o.a===null||o.a===undefined||o.a===""?"":fmtOrigin3(o.a))}</td>
+      <td>${esc(o.b===null||o.b===undefined||o.b===""?"":fmtOrigin3(o.b))}</td>
+      <td>${esc(o.c===null||o.c===undefined||o.c===""?"":fmtOrigin3(o.c))}</td>
       <td>${esc(o.notas||"")}</td>
     </tr>`).join("");
 
