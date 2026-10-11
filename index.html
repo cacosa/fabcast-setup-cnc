@@ -137,7 +137,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.9.5 · TABELA APP RESTAURADA</div>
+      <div class="version">V2.9.7 · PDF BILINGUE</div>
     </div>
   </aside>
 
@@ -1335,7 +1335,7 @@ function generateSetupPdf(){
 <style>
   @page{size:A4 portrait;margin:6mm 8mm 7mm 8mm}
   *{box-sizing:border-box}
-  body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:11px}
+  body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:12px}
   .print-actions{margin-bottom:4px}
   .page{width:100%}
   .page.front{page-break-after:always}
@@ -1361,7 +1361,7 @@ function generateSetupPdf(){
   }
   .identity-main{
     padding:1.8mm 2.5mm;
-    font-size:10.5px;
+    font-size:11.5px;
     font-weight:700;
     line-height:1.25;
   }
@@ -1376,7 +1376,7 @@ function generateSetupPdf(){
     font-size:9px;
     font-weight:800;
   }
-  .program strong{font-size:12.5px}
+  .program strong{font-size:14px}
 
   .section-title{
     border:1px solid #111;
@@ -1393,40 +1393,49 @@ function generateSetupPdf(){
   th,td{border:1px solid #aeb8c4;padding:1mm .9mm;vertical-align:middle}
   th{background:#edf3f8;font-weight:800;text-align:center}
   .group th{background:#cfe2f3}
-  .tools thead th{background:#dbeaf7}
-  .tools thead .group th{background:#bcd7ee}
+  .tools thead th{
+    background:#b8d7ee !important;
+    color:#17365d;
+  }
+  .tools thead .group th{
+    background:#9fc5e8 !important;
+    color:#17365d;
+  }
   .tools tbody td:first-child{
-    background:#eaf3fb;
+    background:#d9eaf7 !important;
     font-weight:900;
     color:#17365d;
     text-align:center;
   }
 
-  .origins thead th{background:#cfe2f3}
+  .origins thead th{
+    background:#b8d7ee !important;
+    color:#17365d;
+  }
   .origins tbody td:first-child{
-    background:#eaf3fb;
+    background:#d9eaf7 !important;
     font-weight:900;
     color:#17365d;
     text-align:center;
   }
 
-  .tools th{font-size:9.2px;line-height:1.05}
-  .tools td{height:5.8mm;font-size:9.8px;line-height:1.05}
-  .origins th{font-size:9.6px}
-  .origins td{height:6.2mm;font-size:10px;line-height:1.05}
-  .code{font-size:8.6px;color:#444;margin-top:.4mm;font-weight:700}
+  .tools th{font-size:10.5px;line-height:1.05}
+  .tools td{height:5.8mm;font-size:11px;line-height:1.05}
+  .origins th{font-size:10.8px}
+  .origins td{height:6.2mm;font-size:11px;line-height:1.05}
+  .code{font-size:9.5px;color:#334155;margin-top:.4mm;font-weight:700}
 
   .notes{
     border:1px solid #111;
     margin-top:1.5mm;
     min-height:18mm;
     padding:1mm 2mm 2mm 2mm;
-    font-size:10px;
-    line-height:1.05;
+    font-size:11px;
+    line-height:1.08;
     white-space:pre-wrap;
   }
-  .notes-title{font-size:10.5px;font-weight:900;margin:0 0 .4mm 0;line-height:1}
-  .notes-hint{font-size:8.5px;color:#555;font-weight:700;margin-left:2mm}
+  .notes-title{font-size:11.5px;font-weight:900;margin:0 0 .4mm 0;line-height:1}
+  .notes-hint{font-size:9.2px;color:#555;font-weight:700;margin-left:2mm}
 
   .footer{
     margin-top:2mm;
@@ -1435,7 +1444,7 @@ function generateSetupPdf(){
     display:flex;
     justify-content:space-between;
     gap:6mm;
-    font-size:8.5px;
+    font-size:9.5px;
     color:#555;
   }
 
@@ -1450,12 +1459,16 @@ function generateSetupPdf(){
   }
 
   @media print{
+    *{
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+    }
     .print-actions{display:none}
   }
 </style>
 </head>
 <body>
-<div class="print-actions"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
+<div class="print-actions"><button onclick="window.print()">Imprimir / Guardar PDF</button> <span style="margin-left:8px;color:#555">A app continua aberta no separador anterior.</span></div>
 
 <section class="page front">
   <div class="header">
@@ -1468,7 +1481,7 @@ function generateSetupPdf(){
     <div class="program">PROGRAMA CNC <strong>${esc(s.programa_cnc||"—")}</strong></div>
   </div>
 
-  <div class="section-title">Ferramentas</div>
+  <div class="section-title">Ferramentas / Tools</div>
   <table class="tools">
     <colgroup>
       <col style="width:9%">
@@ -1511,7 +1524,7 @@ function generateSetupPdf(){
 <section class="page">
   <div class="header">
     <img class="logo" src="${logoUrl}" alt="FABCAST">
-    <div class="title">Origens</div>
+    <div class="title">Setup Maquinação</div>
   </div>
 
   <div class="identity">
@@ -1519,7 +1532,7 @@ function generateSetupPdf(){
     <div class="program">PROGRAMA CNC <strong>${esc(s.programa_cnc||"—")}</strong></div>
   </div>
 
-  <div class="page2-title">Tabela de Origens</div>
+  <div class="page2-title">Tabela de origens / Work offset</div>
   <table class="origins">
     <colgroup>
       <col style="width:10%">
@@ -1544,7 +1557,9 @@ function generateSetupPdf(){
 </section>
 
 <script>
-  window.addEventListener("load",()=>setTimeout(()=>window.print(),350));
+  // A folha abre numa nova janela/separador.
+  // A impressão só é iniciada quando o utilizador clicar em "Imprimir / Guardar PDF",
+  // evitando bloquear a aplicação principal com a caixa de diálogo de impressão.
 <\/script>
 </body>
 </html>`);
