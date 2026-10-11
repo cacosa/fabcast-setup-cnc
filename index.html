@@ -137,7 +137,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.9.7 · PDF BILINGUE</div>
+      <div class="version">V2.9.9 · SEPARADOR FERRAMENTA / CÓDIGO</div>
     </div>
   </aside>
 
@@ -1307,7 +1307,7 @@ function generateSetupPdf(){
       <td>${esc(t.suporte||"")}</td>
       <td>${esc(t.diametro_alonga??"")}</td>
       <td>${esc(t.comp_alonga??"")}</td>
-      <td><strong>${esc(t.tipo||"")}</strong>${t.codigo_interno?`<div class="code">${esc(t.codigo_interno)}</div>`:""}</td>
+      <td class="tool-inline"><strong>${esc(t.tipo||"")}</strong>${t.codigo_interno?`<span class="tool-separator">|</span><span class="code">${esc(t.codigo_interno)}</span>`:""}</td>
       <td>${esc(t.diametro??"")}</td>
       <td>${esc(t.comp_ferramenta??"")}</td>
     </tr>`).join("");
@@ -1423,7 +1423,22 @@ function generateSetupPdf(){
   .tools td{height:5.8mm;font-size:11px;line-height:1.05}
   .origins th{font-size:10.8px}
   .origins td{height:6.2mm;font-size:11px;line-height:1.05}
-  .code{font-size:9.5px;color:#334155;margin-top:.4mm;font-weight:700}
+  .tool-inline{white-space:nowrap}
+  .tool-inline strong{display:inline;font-weight:800}
+  .tool-separator{
+    display:inline;
+    margin:0 2mm;
+    color:#64748b;
+    font-weight:700;
+  }
+  .code{
+    display:inline;
+    font-size:9.2px;
+    color:#334155;
+    margin-left:0;
+    font-weight:700;
+    white-space:nowrap;
+  }
 
   .notes{
     border:1px solid #111;
