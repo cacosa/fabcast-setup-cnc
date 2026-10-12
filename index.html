@@ -104,17 +104,48 @@
       width:92px;min-width:92px;max-width:92px;position:sticky;right:0;background:#fff;z-index:2
     }
     #toolsAccordionBody .table th:nth-child(8){background:#f8fafc;z-index:3}
-    #toolsAccordionBody .table th{font-size:14px;line-height:1.15;padding:10px 8px}
-    #toolsAccordionBody .table td{font-size:15px;line-height:1.15;padding:7px 8px;vertical-align:middle}
-    #toolsAccordionBody .table tbody tr{height:auto}
-    .tool-main{font-weight:800;font-size:15px;display:inline}
+    #toolsAccordionBody .table th{
+      font-size:16px;
+      line-height:1.05;
+      padding:7px 8px;
+      font-weight:900;
+    }
+    #toolsAccordionBody .table td{
+      font-size:17px;
+      line-height:1.05;
+      padding:3px 8px;
+      vertical-align:middle;
+      height:34px;
+    }
+    #toolsAccordionBody .table tbody tr{height:34px}
+    #toolsAccordionBody .table td:nth-child(1),
+    #toolsAccordionBody .table td:nth-child(2),
+    #toolsAccordionBody .table td:nth-child(3),
+    #toolsAccordionBody .table td:nth-child(4),
+    #toolsAccordionBody .table td:nth-child(6),
+    #toolsAccordionBody .table td:nth-child(7){
+      font-weight:700;
+    }
+    #toolsAccordionBody .table .row-actions{padding-top:2px;padding-bottom:2px}
+    #toolsAccordionBody .table .btn-small{
+      padding:4px 8px;
+      font-size:13px;
+      line-height:1;
+    }
+    .tool-main{
+      font-weight:900;
+      font-size:17px;
+      display:inline;
+      white-space:nowrap;
+    }
     .tool-code{
       display:inline;
-      margin-left:8px;
-      font-size:13px;
-      color:var(--muted);
+      margin-left:7px;
+      font-size:15px;
+      line-height:1;
+      color:#475569;
       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-weight:700;
+      font-weight:800;
       white-space:nowrap;
     }
 
@@ -148,7 +179,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.9.11 · APP MAIS LEGÍVEL</div>
+      <div class="version">V2.9.12 · FERRAMENTAS MAIOR + COMPACTA</div>
     </div>
   </aside>
 
