@@ -104,8 +104,19 @@
       width:92px;min-width:92px;max-width:92px;position:sticky;right:0;background:#fff;z-index:2
     }
     #toolsAccordionBody .table th:nth-child(8){background:#f8fafc;z-index:3}
-    .tool-main{font-weight:800}
-    .tool-code{display:block;margin-top:3px;font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    #toolsAccordionBody .table th{font-size:14px;line-height:1.15;padding:10px 8px}
+    #toolsAccordionBody .table td{font-size:15px;line-height:1.15;padding:7px 8px;vertical-align:middle}
+    #toolsAccordionBody .table tbody tr{height:auto}
+    .tool-main{font-weight:800;font-size:15px;display:inline}
+    .tool-code{
+      display:inline;
+      margin-left:8px;
+      font-size:13px;
+      color:var(--muted);
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-weight:700;
+      white-space:nowrap;
+    }
 
     #originsAccordionBody .table{min-width:1080px}
     .section-toolbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -137,7 +148,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.9.10 · ORIGENS 3 DECIMAIS</div>
+      <div class="version">V2.9.11 · APP MAIS LEGÍVEL</div>
     </div>
   </aside>
 
@@ -771,7 +782,7 @@ function renderSetupTools(){
         <td>${esc(t.suporte||"—")}</td>
         <td>${esc(t.diametro_alonga??"—")}</td>
         <td>${esc(t.comp_alonga??"—")}</td>
-        <td><span class="tool-main">${esc(t.tipo||"—")}</span>${t.codigo_interno?`<span class="tool-code">${esc(t.codigo_interno)}</span>`:""}</td>
+        <td><span class="tool-main">${esc(t.tipo||"—")}</span>${t.codigo_interno?`<span class="tool-code">| ${esc(t.codigo_interno)}</span>`:""}</td>
         <td>${esc(t.diametro??"—")}</td>
         <td>${esc(t.comp_ferramenta??"—")}</td>
         <td class="row-actions"><button type="button" class="btn btn-secondary btn-small" onclick="openToolEditor('${t.id}')">Editar</button></td>
