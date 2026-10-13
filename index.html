@@ -77,7 +77,11 @@
     .setup-photo-preview{display:flex;flex-direction:column;gap:0;flex:1}
     .setup-photo-preview img{width:100%;height:300px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
     #setupPhotoName{display:none}
-    .setup-photo-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px;padding-top:2px}
+    .setup-photo-dots{display:flex;justify-content:center;gap:8px;margin-top:5px;min-height:12px}
+    .setup-photo-dot{width:9px;height:9px;border-radius:50%;border:1px solid #7d8a9b;background:#fff;cursor:pointer;padding:0}
+    .setup-photo-dot.active{background:var(--blue);border-color:var(--blue)}
+    .setup-photo-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:5px;padding-top:0}
+    .setup-photo-preview.drag img{border-color:var(--blue);box-shadow:0 0 0 2px rgba(30,100,200,.08)}
     .setup-notes-view{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:#fff;padding:12px;min-height:110px}
     .setup-notes-view small{display:block;color:var(--muted);font-weight:800;margin-bottom:7px}
     .setup-notes-text{white-space:pre-wrap;line-height:1.45;color:var(--text);min-height:64px}
@@ -180,7 +184,7 @@
     <button id="navSupports" class="nav-button" onclick="showView('supports')">🛠 Suportes</button>
     <button id="navOrigins" class="nav-button" onclick="showView('origins')">◎ Tipos de Origem</button>
     <div class="side-bottom">
-      <div class="version">V2.9.13 · IMAGEM MAIOR</div>
+      <div class="version">V2.10.0 · 3 FOTOS + PDF</div>
     </div>
   </aside>
 
@@ -305,8 +309,10 @@
         <div id="setupPhotoPreviewWrap" class="setup-photo-preview hidden">
           <img id="setupPhotoPreview" alt="Fotografia da montagem">
           <div id="setupPhotoName" class="strong"></div>
+          <div id="setupPhotoDots" class="setup-photo-dots"></div>
           <div class="setup-photo-actions">
             <button id="setupPhotoReplaceBtn" type="button" class="btn btn-secondary">Substituir</button>
+            <button id="setupPhotoAddBtn" type="button" class="btn btn-primary">+ Adicionar</button>
             <button id="setupPhotoDeleteBtn" type="button" class="btn btn-danger">Eliminar</button>
           </div>
         </div>
@@ -572,7 +578,7 @@ const planningSb=supabase.createClient(PLANNING_URL,PLANNING_KEY,{auth:{persistS
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 let setups=[],parts=[],machines=[],catalogTools=[],supports=[],originTypes=[];
-let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[],currentSetupPhoto=null;
+let currentSetupId=null,currentSetupTools=[],currentSetupOrigins=[],currentSetupPhotos=[],currentSetupPhotoIndex=0,photoUploadMode='add';
 let supportSelectedFile=null,supportRemoveExisting=false,currentSupportImagePath=null;
 const signedSupportUrls=new Map();
 
@@ -714,65 +720,188 @@ async function openSetup(id){
 
 
 async function loadSetupPhoto(){
-  currentSetupPhoto=null;
-  const {data,error}=await sb.from("setup_fotos").select("id,setup_id,storage_path,ordem").eq("setup_id",currentSetupId).order("ordem").limit(1);
-  if(error){console.error(error);setMsg("setupPhotoMsg","Erro ao carregar fotografia: "+error.message,"error");renderSetupPhoto();return;}
-  currentSetupPhoto=(data||[])[0]||null;
-  if(currentSetupPhoto?.storage_path){
-    const {data:signed,error:e}=await sb.storage.from("setup-fotos").createSignedUrl(currentSetupPhoto.storage_path,3600);
-    currentSetupPhoto.signedUrl=e?null:signed?.signedUrl;
+  const {data,error}=await sb.from("setup_fotos")
+    .select("id,setup_id,storage_path,ordem")
+    .eq("setup_id",currentSetupId)
+    .order("ordem")
+    .limit(3);
+
+  if(error){
+    console.error(error);
+    setMsg("setupPhotoMsg","Erro ao carregar fotografias: "+error.message,"error");
+    currentSetupPhotos=[];
+    currentSetupPhotoIndex=0;
+    renderSetupPhoto();
+    return;
   }
+
+  currentSetupPhotos=data||[];
+
+  for(const p of currentSetupPhotos){
+    if(p?.storage_path){
+      const {data:signed,error:e}=await sb.storage
+        .from("setup-fotos")
+        .createSignedUrl(p.storage_path,3600);
+      p.signedUrl=e?null:signed?.signedUrl;
+    }
+  }
+
+  if(currentSetupPhotoIndex>=currentSetupPhotos.length){
+    currentSetupPhotoIndex=Math.max(0,currentSetupPhotos.length-1);
+  }
+
   renderSetupPhoto();
 }
+
+function getCurrentSetupPhoto(){
+  return currentSetupPhotos[currentSetupPhotoIndex]||null;
+}
+
+function setSetupPhotoIndex(index){
+  const n=Number(index);
+  if(!Number.isInteger(n) || n<0 || n>=currentSetupPhotos.length)return;
+  currentSetupPhotoIndex=n;
+  renderSetupPhoto();
+}
+
 function renderSetupPhoto(){
-  const has=!!(currentSetupPhoto&&currentSetupPhoto.signedUrl);
+  const has=currentSetupPhotos.length>0;
   $("setupPhotoDrop").classList.toggle("hidden",has);
   $("setupPhotoPreviewWrap").classList.toggle("hidden",!has);
-  if(has){
-    $("setupPhotoPreview").src=currentSetupPhoto.signedUrl;
-    $("setupPhotoName").textContent="";
+
+  const current=getCurrentSetupPhoto();
+  if(has && current?.signedUrl){
+    $("setupPhotoPreview").src=current.signedUrl;
   }else{
     $("setupPhotoPreview").removeAttribute("src");
-    $("setupPhotoName").textContent="";
   }
+
+  $("setupPhotoName").textContent="";
+
+  $("setupPhotoDots").innerHTML=currentSetupPhotos.map((p,i)=>`
+    <button
+      type="button"
+      class="setup-photo-dot ${i===currentSetupPhotoIndex?"active":""}"
+      title="Fotografia ${i+1}"
+      aria-label="Fotografia ${i+1}"
+      onclick="setSetupPhotoIndex(${i})"></button>`).join("");
+
+  $("setupPhotoAddBtn").classList.toggle("hidden",currentSetupPhotos.length>=3);
   setMsg("setupPhotoMsg","");
 }
-async function uploadSetupPhoto(file){
+
+async function uploadSetupPhoto(file,mode=photoUploadMode){
   if(!file)return;
-  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){alert("Formato inválido. Use JPG, PNG ou WEBP.");return;}
-  if(file.size>1024*1024){alert("A fotografia ultrapassa 1 MB. Reduza/comprima a imagem antes de enviar.");return;}
+
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+    alert("Formato inválido. Use JPG, PNG ou WEBP.");
+    return;
+  }
+
+  if(file.size>1024*1024){
+    alert("A fotografia ultrapassa 1 MB. Reduza/comprima a imagem antes de enviar.");
+    return;
+  }
+
+  if(mode==="add" && currentSetupPhotos.length>=3){
+    alert("Este setup já tem 3 fotografias. Elimine ou substitua uma das existentes.");
+    return;
+  }
+
   const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
-  const path=`setups/${currentSetupId}/foto_montagem.${ext}`;
-  setMsg("setupPhotoMsg","A guardar fotografia...");
+  const current=getCurrentSetupPhoto();
+  const targetOrder=(mode==="replace" && current)
+    ? (current.ordem || currentSetupPhotoIndex+1)
+    : (currentSetupPhotos.length+1);
+
+  const path=`setups/${currentSetupId}/foto_${targetOrder}.${ext}`;
+
+  setMsg("setupPhotoMsg",mode==="replace"?"A substituir fotografia...":"A adicionar fotografia...");
+
   try{
-    if(currentSetupPhoto?.storage_path){
-      await sb.storage.from("setup-fotos").remove([currentSetupPhoto.storage_path]);
+    if(mode==="replace" && current?.storage_path){
+      await sb.storage.from("setup-fotos").remove([current.storage_path]);
     }
-    const {error:upErr}=await sb.storage.from("setup-fotos").upload(path,file,{upsert:true,contentType:file.type});
+
+    const {error:upErr}=await sb.storage
+      .from("setup-fotos")
+      .upload(path,file,{upsert:true,contentType:file.type});
+
     if(upErr)throw upErr;
+
     let res;
-    if(currentSetupPhoto){
-      res=await sb.from("setup_fotos").update({storage_path:path,ordem:1}).eq("id",currentSetupPhoto.id).select().single();
+
+    if(mode==="replace" && current){
+      res=await sb.from("setup_fotos")
+        .update({storage_path:path,ordem:targetOrder})
+        .eq("id",current.id)
+        .select()
+        .single();
     }else{
-      res=await sb.from("setup_fotos").insert({setup_id:currentSetupId,storage_path:path,ordem:1}).select().single();
+      res=await sb.from("setup_fotos")
+        .insert({setup_id:currentSetupId,storage_path:path,ordem:targetOrder})
+        .select()
+        .single();
     }
+
     if(res.error)throw res.error;
+
+    if(mode==="add"){
+      currentSetupPhotoIndex=currentSetupPhotos.length;
+    }
+
     await loadSetupPhoto();
-    setMsg("setupPhotoMsg","Fotografia guardada.");
+
+    setMsg(
+      "setupPhotoMsg",
+      mode==="replace"?"Fotografia substituída.":"Fotografia adicionada."
+    );
   }catch(e){
-    console.error(e);setMsg("setupPhotoMsg","Erro ao guardar fotografia: "+(e?.message||e),"error");
+    console.error(e);
+    setMsg("setupPhotoMsg","Erro ao guardar fotografia: "+(e?.message||e),"error");
+  }finally{
+    photoUploadMode="add";
+    $("setupPhotoFile").value="";
   }
 }
+
 async function deleteSetupPhoto(){
-  if(!currentSetupPhoto)return;
-  if(!confirm("Remover a fotografia da montagem deste setup?"))return;
+  const current=getCurrentSetupPhoto();
+  if(!current)return;
+
+  if(!confirm(`Eliminar a fotografia ${currentSetupPhotoIndex+1} deste setup?`))return;
+
   try{
-    if(currentSetupPhoto.storage_path)await sb.storage.from("setup-fotos").remove([currentSetupPhoto.storage_path]);
-    const {error}=await sb.from("setup_fotos").delete().eq("id",currentSetupPhoto.id);
+    if(current.storage_path){
+      await sb.storage.from("setup-fotos").remove([current.storage_path]);
+    }
+
+    const {error}=await sb.from("setup_fotos")
+      .delete()
+      .eq("id",current.id);
+
     if(error)throw error;
-    currentSetupPhoto=null;renderSetupPhoto();setMsg("setupPhotoMsg","Fotografia removida.");
+
+    const remaining=currentSetupPhotos.filter(x=>x.id!==current.id);
+
+    for(let i=0;i<remaining.length;i++){
+      if(remaining[i].ordem!==i+1){
+        await sb.from("setup_fotos")
+          .update({ordem:i+1})
+          .eq("id",remaining[i].id);
+      }
+    }
+
+    currentSetupPhotoIndex=Math.max(
+      0,
+      Math.min(currentSetupPhotoIndex,remaining.length-1)
+    );
+
+    await loadSetupPhoto();
+    setMsg("setupPhotoMsg","Fotografia eliminada.");
   }catch(e){
-    console.error(e);setMsg("setupPhotoMsg","Erro ao remover fotografia: "+(e?.message||e),"error");
+    console.error(e);
+    setMsg("setupPhotoMsg","Erro ao eliminar fotografia: "+(e?.message||e),"error");
   }
 }
 
@@ -1336,16 +1465,53 @@ window.deleteToolEntry=deleteToolEntry;
 window.openOriginEntryEditor=openOriginEntryEditor;
 window.saveOriginEntry=saveOriginEntry;
 window.deleteOriginEntry=deleteOriginEntry;
+window.setSetupPhotoIndex=setSetupPhotoIndex;
 
 const setupPhotoDrop=$("setupPhotoDrop");
+const setupPhotoPreviewWrap=$("setupPhotoPreviewWrap");
 const setupPhotoFile=$("setupPhotoFile");
-setupPhotoDrop.onclick=()=>setupPhotoFile.click();
-$("setupPhotoReplaceBtn").onclick=()=>setupPhotoFile.click();
+
+setupPhotoDrop.onclick=()=>{
+  photoUploadMode="add";
+  setupPhotoFile.click();
+};
+
+$("setupPhotoReplaceBtn").onclick=()=>{
+  photoUploadMode="replace";
+  setupPhotoFile.click();
+};
+
+$("setupPhotoAddBtn").onclick=()=>{
+  photoUploadMode="add";
+  setupPhotoFile.click();
+};
+
 $("setupPhotoDeleteBtn").onclick=deleteSetupPhoto;
-setupPhotoFile.onchange=e=>uploadSetupPhoto(e.target.files?.[0]);
-["dragenter","dragover"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.add("drag")}));
-["dragleave","drop"].forEach(evt=>setupPhotoDrop.addEventListener(evt,e=>{e.preventDefault();setupPhotoDrop.classList.remove("drag")}));
-setupPhotoDrop.addEventListener("drop",e=>uploadSetupPhoto(e.dataTransfer.files?.[0]));
+
+setupPhotoFile.onchange=e=>uploadSetupPhoto(
+  e.target.files?.[0],
+  photoUploadMode
+);
+
+function bindPhotoDropTarget(el){
+  ["dragenter","dragover"].forEach(evt=>el.addEventListener(evt,e=>{
+    e.preventDefault();
+    el.classList.add("drag");
+  }));
+
+  ["dragleave","drop"].forEach(evt=>el.addEventListener(evt,e=>{
+    e.preventDefault();
+    el.classList.remove("drag");
+  }));
+
+  el.addEventListener("drop",e=>{
+    photoUploadMode="add";
+    uploadSetupPhoto(e.dataTransfer.files?.[0],"add");
+  });
+}
+
+bindPhotoDropTarget(setupPhotoDrop);
+bindPhotoDropTarget(setupPhotoPreviewWrap);
 
 
 
@@ -1355,6 +1521,7 @@ function generateSetupPdf(){
 
   const tools=currentSetupTools||[];
   const origins=currentSetupOrigins||[];
+  const photos=(currentSetupPhotos||[]).slice(0,3);
   const editDate=s.updated_at?new Date(s.updated_at).toLocaleString("pt-PT"):"—";
   const logoUrl="https://raw.githubusercontent.com/cacosa/planeamento-cnc/main/fabcast-logo.png";
 
@@ -1378,6 +1545,11 @@ function generateSetupPdf(){
       <td>${esc(o.c===null||o.c===undefined||o.c===""?"":fmtOrigin3(o.c))}</td>
       <td>${esc(o.notas||"")}</td>
     </tr>`).join("");
+
+  const photoSlotsHtml=[0,1,2].map(i=>{
+    const p=photos[i];
+    return `<div class="pdf-photo-slot">${p?.signedUrl?`<img src="${p.signedUrl}" alt="Fotografia ${i+1}">`:""}</div>`;
+  }).join("");
 
   const identification=[s.codigo_peca,s.designacao,s.operacao,s.maquina].filter(Boolean).join(" · ");
   const w=window.open("","_blank");
@@ -1529,6 +1701,32 @@ function generateSetupPdf(){
     font-weight:900;
   }
 
+  .pdf-photos-title{
+    margin-top:4mm;
+    font-size:10.5px;
+    font-weight:900;
+  }
+  .pdf-photos{
+    margin-top:2mm;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:4mm;
+  }
+  .pdf-photo-slot{
+    border:1px solid #aeb8c4;
+    height:48mm;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+    padding:1.5mm;
+  }
+  .pdf-photo-slot img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+
   @media print{
     *{
       -webkit-print-color-adjust:exact !important;
@@ -1620,6 +1818,9 @@ function generateSetupPdf(){
     </thead>
     <tbody>${originsHtml}</tbody>
   </table>
+
+  <div class="pdf-photos-title">Fotografias da montagem / Setup photos</div>
+  <div class="pdf-photos">${photoSlotsHtml}</div>
 
   <div class="footer">
     <span>Origens registadas: ${origins.length}</span>
